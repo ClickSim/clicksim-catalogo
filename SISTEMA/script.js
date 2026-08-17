@@ -37,9 +37,11 @@ function resolverImagem(src) {
   return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
 }
 
+const API_PERFUMES = "https://167-99-150-99.sslip.io/api/perfumes";
+
 async function carregarPerfumes() {
   try {
-    const resp = await fetch("/api/perfumes");
+    const resp = await fetch(API_PERFUMES);
     if (resp.ok) {
       const lista = await resp.json();
       if (Array.isArray(lista) && lista.length > 0) return lista.map(normalizarImagem);

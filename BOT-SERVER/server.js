@@ -478,7 +478,10 @@ app.use(express.json());
 // ---------- catálogo público (SISTEMA) — sem login, é o site que qualquer cliente visita ----------
 // Fica antes do exigirLogin de propósito: o catálogo publicado precisa carregar sem senha.
 // A gravação (POST /api/perfumes) continua abaixo do exigirLogin, só o painel pode salvar.
+// CORS liberado só nessa rota: o catálogo publicado vive noutra origem (GitHub Pages) e precisa
+// buscar os dados daqui via fetch — sem isso o navegador bloqueia a resposta.
 app.get('/api/perfumes', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
   res.json(lerJSON(ARQ_PERFUMES, []));
 });
 app.use('/SISTEMA', express.static(PASTA_SISTEMA));
