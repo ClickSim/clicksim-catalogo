@@ -26,9 +26,11 @@ esqueleto. Segue o padrão de organização usado nos catálogos/cardápios da c
 
 - **Catálogo público (`SISTEMA/`)**: publicado via **GitHub Pages**, direto do repositório
   `ClickSim/clicksim-catalogo` (migrado em 2026-08-17, ver seção "Acesso ao GitHub" abaixo) —
-  `https://clicksim.github.io/clicksim-catalogo/SISTEMA/index.html` assim que o Pages for
-  habilitado nesse repositório. Não depende de nenhum servidor ligado; atualiza sozinho a cada
-  `git push` na branch `main`.
+  **link confirmado no ar em 2026-08-17**:
+  `https://clicksim.github.io/clicksim-catalogo/SISTEMA/index.html`. Não depende de nenhum
+  servidor ligado; atualiza sozinho (leva 1-2 min) a cada `git push` na branch `main`. Esse é o
+  link novo pra passar pro cliente (o antigo, `clicksim1.github.io/clicksimcatalogo/...`, parou de
+  ser atualizado).
 - **Painel (`BOT-SERVER`)**: hoje roda **local**, dando duplo clique em `iniciar.vbs` num
   computador específico (ver `BOT-SERVER/PASSO_A_PASSO_INSTALACAO.md`). Só funciona nesse
   computador, enquanto ele estiver ligado — **não é acessível do celular ou de outro lugar ainda**.
