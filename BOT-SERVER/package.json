@@ -1,0 +1,16 @@
+{
+  "name": "whatsapp-bot-clicksim",
+  "version": "1.0.0",
+  "description": "Atendente WhatsApp automático da Click Sim Perfumaria, com painel web e banco de mensagens",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "exceljs": "^4.4.0",
+    "express": "^4.19.2",
+    "pino": "^9.2.0",
+    "qrcode": "^1.5.3"
+  }
+}

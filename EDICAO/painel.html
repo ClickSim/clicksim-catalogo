@@ -5,101 +5,44 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Click Sim | Painel de Perfumes</title>
 <link rel="stylesheet" href="../SISTEMA/style.css">
-<link rel="stylesheet" href="painel.css">
+<style>
+  .aviso {
+    max-width: 560px;
+    margin: 80px auto;
+    padding: 28px 32px;
+    background: var(--cor-card);
+    border: 1px solid var(--cor-borda);
+    border-radius: 12px;
+    text-align: center;
+  }
+  .aviso h1 { color: var(--cor-destaque); font-size: 1.3rem; margin-top: 0; }
+  .aviso a.botao {
+    display: inline-block;
+    margin-top: 16px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background: var(--cor-destaque);
+    color: #fff;
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .aviso .rodape { margin-top: 18px; font-size: 0.85rem; color: #7a6f68; }
+</style>
 </head>
 <body>
 
-<div id="painelConteudo" class="painel">
-
-  <header class="topbar">
-    <h1>Click Sim <span>Painel de Perfumes</span></h1>
-    <p class="subtitle">Adicione, edite, remova e reordene os produtos do catálogo</p>
-    <a href="../SISTEMA/index.html" class="link-catalogo">← Ver catálogo</a>
-    ·
-    <a href="../BOT/bot-clicksim.html" class="link-catalogo">Configurar mensagens do bot →</a>
-  </header>
-
-  <section class="painel-acoes">
-    <button id="btnBaixar" class="btn-comprar">Baixar perfumes.js atualizado</button>
-    <button id="btnRestaurar" class="btn-secundario">Restaurar catálogo original</button>
-  </section>
-
-  <section class="painel-form">
-    <h2>WhatsApp da loja</h2>
-    <label for="fWhatsapp">Número (com DDI+DDD, só números)</label>
-    <input type="text" id="fWhatsapp" placeholder="Ex: 5547988587295">
-    <div class="form-botoes">
-      <button type="button" id="btnSalvarWhatsapp" class="btn-comprar">Salvar número</button>
-      <button type="button" id="btnBaixarConfig" class="btn-secundario">Baixar config.js atualizado</button>
-    </div>
-  </section>
-
-  <section class="painel-form">
-    <h2 id="tituloForm">Adicionar novo perfume</h2>
-    <form id="formPerfume">
-      <input type="hidden" id="fId">
-
-      <label for="fNome">Nome do produto</label>
-      <input type="text" id="fNome" required placeholder="Ex: Yara 100ml EDP – Feminino">
-
-      <label for="fMarca">Marca</label>
-      <input type="text" id="fMarca" required placeholder="Ex: Lattafa">
-
-      <div class="form-linha">
-        <div>
-          <label for="fCategoria">Categoria</label>
-          <select id="fCategoria">
-            <option value="Perfume">Perfume</option>
-            <option value="Tester">Outlet/Tester</option>
-            <option value="Sabonete">Sabonete</option>
-          </select>
-        </div>
-        <div>
-          <label for="fGenero">Gênero</label>
-          <select id="fGenero">
-            <option value="Masculino">Masculino</option>
-            <option value="Feminino">Feminino</option>
-            <option value="Unissex">Unissex</option>
-          </select>
-        </div>
-        <div>
-          <label for="fPreco">Preço (R$)</label>
-          <input type="number" id="fPreco" step="0.01" min="0" placeholder="Deixe vazio p/ 'Consulte'">
-        </div>
-      </div>
-
-      <label for="fImagem">Arquivo da imagem (dentro da pasta EDICAO/imagens)</label>
-      <input type="text" id="fImagem" placeholder="nome-do-arquivo.jpg">
-      <div class="preview-imagem">
-        <img id="fImagemPreview" alt="Pré-visualização" hidden>
-        <span id="fImagemSemFoto" class="sem-foto">A pré-visualização da foto aparece aqui</span>
-      </div>
-
-      <label for="fDescricao">Descrição</label>
-      <textarea id="fDescricao" rows="3" placeholder="Ex: Floral Frutado. Topo: ... Coração: ... Fundo: ..."></textarea>
-
-      <div class="form-checkboxes">
-        <label class="checkbox"><input type="checkbox" id="fMaisVendido"> Mais vendido</label>
-        <label class="checkbox"><input type="checkbox" id="fPromocao"> Em promoção</label>
-      </div>
-
-      <div class="form-botoes">
-        <button type="submit" id="btnSalvarProduto" class="btn-comprar">Adicionar produto</button>
-        <button type="button" id="btnCancelarEdicao" class="btn-secundario" hidden>Cancelar edição</button>
-      </div>
-    </form>
-  </section>
-
-  <section class="painel-lista">
-    <h2>Produtos no catálogo (<span id="totalProdutos">0</span>) — arraste para reordenar</h2>
-    <p class="painel-dica">A ordem desta lista é a mesma ordem que aparece no catálogo do cliente.</p>
-    <div id="listaPerfumes" class="lista-perfumes"></div>
-  </section>
-
+<div class="aviso">
+  <h1>Este painel mudou de lugar</h1>
+  <p>
+    O cadastro de perfumes agora fica dentro do <strong>Painel Click Sim</strong> unificado,
+    junto com o atendente de WhatsApp — aba "🧴 Cadastro de Perfumes".
+  </p>
+  <a class="botao" href="http://localhost:3000/">Abrir o Painel Click Sim</a>
+  <p class="rodape">
+    Só funciona com o bot rodando (local: <code>npm start</code> na pasta <code>BOT-SERVER</code>,
+    ou o endereço do servidor em produção).
+  </p>
 </div>
 
-<script src="config.js"></script>
-<script src="perfumes.js"></script>
-<script src="painel.js"></script>
 </body>
 </html>

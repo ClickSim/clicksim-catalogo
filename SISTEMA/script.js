@@ -18,36 +18,50 @@ const inputEndereco = document.getElementById("inputEndereco");
 const inputHorario = document.getElementById("inputHorario");
 const modalErro = document.getElementById("modalErro");
 
-const CHAVE_PERFUMES = "clicksim_perfumes";
-
 function normalizarImagem(p) {
-  if (p.imagem && p.imagem.startsWith("imagens/")) {
-    p.imagem = p.imagem.slice("imagens/".length);
+  if (Array.isArray(p.imagens)) {
+    p.imagens = p.imagens.slice(0, 5);
+  } else if (p.imagem) {
+    let img = p.imagem;
+    if (img.startsWith("imagens/")) img = img.slice("imagens/".length);
+    p.imagens = [img];
+  } else {
+    p.imagens = [];
   }
+  delete p.imagem;
   return p;
 }
 
-function carregarPerfumes() {
+function resolverImagem(src) {
+  if (!src) return "";
+  return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
+}
+
+async function carregarPerfumes() {
   try {
-    const salvos = localStorage.getItem(CHAVE_PERFUMES);
-    if (salvos) {
-      const lista = JSON.parse(salvos);
+    const resp = await fetch("/api/perfumes");
+    if (resp.ok) {
+      const lista = await resp.json();
       if (Array.isArray(lista) && lista.length > 0) return lista.map(normalizarImagem);
     }
   } catch (erro) {
-    console.warn("Não foi possível ler o catálogo salvo no painel:", erro);
+    console.warn("Não foi possível carregar o catálogo do servidor, usando cópia local:", erro);
   }
+  // fallback: catálogo embutido no arquivo perfumes.js (usado se a API estiver fora do ar)
   return typeof PERFUMES !== "undefined" ? PERFUMES.map(normalizarImagem) : [];
 }
 
-let perfumes = carregarPerfumes();
+let perfumes = [];
 let perfumeSelecionado = null;
 
-if (perfumes.length === 0) {
-  catalogo.innerHTML = '<p class="sem-resultados">Não foi possível carregar o catálogo (perfumes.js).</p>';
-} else {
-  renderizar(perfumes);
-}
+carregarPerfumes().then((lista) => {
+  perfumes = lista;
+  if (perfumes.length === 0) {
+    catalogo.innerHTML = '<p class="sem-resultados">Não foi possível carregar o catálogo.</p>';
+  } else {
+    renderizar(perfumes);
+  }
+});
 
 function formatarPreco(valor) {
   if (valor === null || valor === undefined) return "Consulte o valor";
@@ -67,11 +81,25 @@ function renderizar(lista) {
 
   catalogo.innerHTML = lista
     .map(
-      (p) => `
+      (p, indice) => `
     <article class="card">
-      <div class="card-imagem">
+      <div class="card-imagem" data-indice="${indice}">
         ${p.maisVendido ? '<span class="selo-mais-vendido">Mais vendido</span>' : ""}
-        <img src="${PASTA_IMAGENS}${p.imagem}" alt="${p.nome}" onerror="this.parentElement.innerHTML='<span class=\\'sem-foto\\'>Sem foto</span>'">
+        ${
+          p.imagens[0]
+            ? `<img src="${resolverImagem(p.imagens[0])}" alt="${p.nome}" onerror="this.hidden=true; this.parentElement.querySelector('.sem-foto').hidden=false;">`
+            : ""
+        }
+        <span class="sem-foto" ${p.imagens[0] ? "hidden" : ""}>Sem foto</span>
+        ${
+          p.imagens.length > 1
+            ? `
+          <button type="button" class="galeria-seta galeria-anterior" aria-label="Foto anterior">‹</button>
+          <button type="button" class="galeria-seta galeria-proxima" aria-label="Próxima foto">›</button>
+          <div class="galeria-pontos">${p.imagens.map((_, i) => `<span class="ponto${i === 0 ? " ativo" : ""}"></span>`).join("")}</div>
+        `
+            : ""
+        }
       </div>
       <div class="card-corpo">
         <span class="card-marca">${p.marca}</span>
@@ -84,6 +112,27 @@ function renderizar(lista) {
   `
     )
     .join("");
+
+  document.querySelectorAll(".card-imagem").forEach((el) => {
+    const p = lista[Number(el.dataset.indice)];
+    if (p.imagens.length <= 1) return;
+    const imgEl = el.querySelector("img");
+    const pontos = el.querySelectorAll(".ponto");
+    let atual = 0;
+    function mostrar(i) {
+      atual = (i + p.imagens.length) % p.imagens.length;
+      if (imgEl) imgEl.src = resolverImagem(p.imagens[atual]);
+      pontos.forEach((pt, i2) => pt.classList.toggle("ativo", i2 === atual));
+    }
+    el.querySelector(".galeria-anterior").addEventListener("click", (e) => {
+      e.stopPropagation();
+      mostrar(atual - 1);
+    });
+    el.querySelector(".galeria-proxima").addEventListener("click", (e) => {
+      e.stopPropagation();
+      mostrar(atual + 1);
+    });
+  });
 
   document.querySelectorAll(".btn-comprar").forEach((btn) => {
     btn.addEventListener("click", (e) => {

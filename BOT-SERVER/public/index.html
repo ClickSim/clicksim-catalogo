@@ -1,0 +1,244 @@
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Painel Click Sim</title>
+<link rel="icon" href="logo.ico" />
+<link rel="stylesheet" href="style.css" />
+
+<div class="app">
+  <header class="topo-painel">
+    <img id="logo" src="logo.png" alt="Click Sim Perfumaria" onerror="this.style.display='none'" />
+    <div>
+      <h1>Click Sim</h1>
+      <p class="subtitulo">Painel administrativo</p>
+    </div>
+  </header>
+
+  <nav class="abas-painel">
+    <button type="button" class="btn-aba ativa" data-aba="aba-bot">🤖 Atendente (Bot)</button>
+    <button type="button" class="btn-aba" data-aba="aba-perfumes">🧴 Cadastro de Perfumes</button>
+  </nav>
+
+  <main>
+    <div id="aba-bot" class="conteudo-aba ativa">
+      <div class="grid">
+        <div class="coluna">
+          <section class="card borda-destaque">
+            <div class="titulo-card">
+              <span class="icone icone-destaque">⚙️</span>
+              <h2>Controle</h2>
+            </div>
+            <div class="linha-controle">
+              <span>Respostas automáticas</span>
+              <label class="toggle">
+                <input type="checkbox" id="cfg-ativo" />
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="linha-controle">
+              <span>Servidor</span>
+              <span id="status-badge" class="badge desconectado">verificando...</span>
+            </div>
+          </section>
+
+          <section id="secao-qr" class="card borda-destaque" hidden>
+            <div class="titulo-card">
+              <span class="icone icone-destaque">📷</span>
+              <h2>Conectar WhatsApp</h2>
+            </div>
+            <p class="dica">Abra o WhatsApp da loja → Aparelhos conectados → Conectar um aparelho e escaneie:</p>
+            <img id="qr-img" alt="QR Code" />
+          </section>
+
+          <section id="secao-conectado" class="card borda-secundaria" hidden>
+            <div class="titulo-card">
+              <span class="icone icone-verde">✅</span>
+              <h2>Conectado</h2>
+            </div>
+            <p>Número ativo: <strong id="numero-ativo">-</strong></p>
+            <button id="btn-reconectar" class="btn btn-secundario">Trocar número</button>
+            <button id="btn-encerrar" class="btn btn-perigo">Desligar atendente</button>
+          </section>
+
+          <section class="card borda-secundaria">
+            <div class="titulo-card">
+              <span class="icone icone-verde">💬</span>
+              <h2>Configurações da loja</h2>
+            </div>
+            <label>Nome do atendente
+              <input id="cfg-nome-atendente" placeholder="Ex: Jefferson" />
+            </label>
+            <label>Link do catálogo
+              <span class="dica-inline">Usado no lugar de [LINK DO CATÁLOGO QUANDO PUBLICAR] nas mensagens</span>
+              <input id="cfg-link-catalogo" placeholder="https://..." />
+            </label>
+            <label>Horário de atendimento
+              <span class="dica-inline">Fora desse horário, o bot usa a mensagem de "Ausência" / "Saudação Fora do Horário" em vez da "Saudação" normal.</span>
+              <div class="linha-horarios">
+                <input id="cfg-horario-abertura" type="time" />
+                <span>até</span>
+                <input id="cfg-horario-fechamento" type="time" />
+              </div>
+            </label>
+            <label class="linha-check">
+              <input type="checkbox" id="cfg-humanizado" />
+              Simular "digitando..." antes de responder
+            </label>
+            <button id="btn-salvar-config" class="btn btn-destaque">Salvar configurações</button>
+          </section>
+        </div>
+
+        <div class="coluna">
+          <section class="card borda-destaque">
+            <div class="titulo-card">
+              <span class="icone icone-destaque">📝</span>
+              <h2 id="titulo-form">Adicionar mensagem</h2>
+            </div>
+            <input type="hidden" id="edicao-id" />
+            <label>Tipo
+              <select id="nova-tipo">
+                <option value="Resposta Rápida">Resposta Rápida (por palavra-chave)</option>
+                <option value="Saudação">Saudação</option>
+                <option value="Saudação Fora do Horário">Saudação Fora do Horário</option>
+                <option value="Ausência">Ausência</option>
+                <option value="Fallback">Fallback</option>
+                <option value="Fallback Fora do Horário">Fallback Fora do Horário</option>
+                <option value="Follow-up">Follow-up (manual, sem automação por enquanto)</option>
+              </select>
+            </label>
+            <label>Título
+              <span class="dica-inline">Só de uso interno, o cliente nunca vê isso</span>
+              <input id="nova-titulo" placeholder="Ex: Formas de pagamento" />
+            </label>
+            <label id="campo-nova-palavras">Palavras-chave
+              <span class="dica-inline">Separe com vírgula. Só usado no tipo "Resposta Rápida".</span>
+              <input id="nova-palavras" placeholder="Ex: pagamento, pix, cartão" />
+            </label>
+            <label>Resposta
+              <span class="dica-inline">O que o bot deve responder</span>
+              <textarea id="nova-resposta" rows="3" placeholder="Ex: Aceitamos Pix, Cartão de Débito..."></textarea>
+            </label>
+            <label>Nota interna
+              <span class="dica-inline">Opcional, nunca é enviada ao cliente — só aparece aqui no painel</span>
+              <input id="nova-nota" placeholder="Ex: marcar como não lida depois" />
+            </label>
+            <label class="linha-check">
+              <input type="checkbox" id="nova-ativa" checked />
+              Mensagem ativa
+            </label>
+            <div>
+              <button id="btn-add-pergunta" class="btn btn-destaque">✓ Salvar</button>
+              <button id="btn-limpar-form" class="btn btn-secundario">Limpar</button>
+            </div>
+          </section>
+
+          <section class="card borda-secundaria">
+            <div class="titulo-card">
+              <span class="icone icone-destaque">📋</span>
+              <h2>Mensagens cadastradas</h2>
+            </div>
+            <div id="lista-perguntas"></div>
+          </section>
+
+          <section class="card borda-secundaria">
+            <div class="titulo-card">
+              <span class="icone icone-destaque">🕑</span>
+              <h2>Histórico</h2>
+            </div>
+            <div id="lista-conversas" class="conversas"></div>
+          </section>
+        </div>
+      </div>
+    </div>
+
+    <div id="aba-perfumes" class="conteudo-aba">
+      <section class="card borda-destaque">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">📱</span>
+          <h2>WhatsApp da loja (link "Comprar" do catálogo)</h2>
+        </div>
+        <label for="fWhatsapp">Número (com DDI+DDD, só números)
+          <input type="text" id="fWhatsapp" placeholder="Ex: 5547988587295">
+        </label>
+        <div>
+          <button type="button" id="btnSalvarWhatsapp" class="btn btn-destaque">Salvar número</button>
+          <button type="button" id="btnBaixarConfig" class="btn btn-secundario">Baixar config.js atualizado</button>
+        </div>
+      </section>
+
+      <section class="card borda-destaque">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">🧴</span>
+          <h2 id="tituloForm">Adicionar novo perfume</h2>
+        </div>
+        <form id="formPerfume">
+          <input type="hidden" id="fId">
+
+          <label for="fNome">Nome do produto
+            <input type="text" id="fNome" required placeholder="Ex: Yara 100ml EDP – Feminino">
+          </label>
+
+          <label for="fMarca">Marca
+            <input type="text" id="fMarca" required placeholder="Ex: Lattafa">
+          </label>
+
+          <div class="form-linha">
+            <label for="fCategoria">Categoria
+              <select id="fCategoria">
+                <option value="Perfume">Perfume</option>
+                <option value="Tester">Outlet/Tester</option>
+                <option value="Sabonete">Sabonete</option>
+              </select>
+            </label>
+            <label for="fGenero">Gênero
+              <select id="fGenero">
+                <option value="Masculino">Masculino</option>
+                <option value="Feminino">Feminino</option>
+                <option value="Unissex">Unissex</option>
+              </select>
+            </label>
+            <label for="fPreco">Preço (R$)
+              <input type="number" id="fPreco" step="0.01" min="0" placeholder="Vazio p/ 'Consulte'">
+            </label>
+          </div>
+
+          <label for="fFotos">Fotos do produto (até 5)
+            <input type="file" id="fFotos" accept="image/*" multiple>
+          </label>
+          <div id="previewFotos" class="preview-fotos"></div>
+
+          <label for="fDescricao">Descrição
+            <textarea id="fDescricao" rows="3" placeholder="Ex: Floral Frutado. Topo: ... Coração: ... Fundo: ..."></textarea>
+          </label>
+
+          <div class="form-checkboxes">
+            <label class="linha-check"><input type="checkbox" id="fMaisVendido"> Mais vendido</label>
+            <label class="linha-check"><input type="checkbox" id="fPromocao"> Em promoção</label>
+          </div>
+
+          <div>
+            <button type="submit" id="btnSalvarProduto" class="btn btn-destaque">Adicionar produto</button>
+            <button type="button" id="btnCancelarEdicao" class="btn btn-secundario" hidden>Cancelar edição</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="card borda-secundaria">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">📋</span>
+          <h2>Produtos no catálogo (<span id="totalProdutos">0</span>) — arraste para reordenar</h2>
+        </div>
+        <p class="dica">A ordem desta lista é a mesma ordem que aparece no catálogo do cliente.</p>
+        <div>
+          <button id="btnBaixar" class="btn btn-destaque">Baixar perfumes.js atualizado</button>
+          <button id="btnRestaurar" class="btn btn-secundario">Restaurar catálogo original</button>
+        </div>
+        <div id="listaPerfumes" class="lista-perfumes"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script src="tabs.js"></script>
+<script src="app.js"></script>
+<script src="catalogo/perfumes.js"></script>
+<script src="app-perfumes.js"></script>

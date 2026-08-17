@@ -1,0 +1,173 @@
+[
+  {
+    "id": "1",
+    "tipo": "Saudação",
+    "titulo": "Boas-vindas",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "Olá! Seja bem-vindo(a) à Click Sim Perfumaria! Meu nome é Jefferson, sou o responsável pelo atendimento por aqui.\nPara agilizar seu atendimento, segue o link do nosso catálogo, onde você pode escolher o perfume ideal e enviar o resumo do seu pedido 😊\n[LINK DO CATÁLOGO QUANDO PUBLICAR]\nTemos perfumes originais, testers com desconto e sabonetes — é só me falar o que você procura! 💛"
+  },
+  {
+    "id": "2",
+    "tipo": "Ausência",
+    "titulo": "Fora do horário",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "Oi! No momento estamos fora do nosso horário de atendimento (09h às 18h), mas já anotei sua mensagem e te respondo assim que possível. Se quiser adiantar, me conta o nome do perfume ou o que você está procurando! 🕐"
+  },
+  {
+    "id": "3",
+    "tipo": "Saudação Fora do Horário",
+    "titulo": "1º contato do dia, fora do horário",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "Olá! Seja bem-vindo(a) à Click Sim Perfumaria! Meu nome é Jefferson, sou o responsável pelo atendimento por aqui.\nNo momento estamos fora do nosso horário de atendimento (09h às 18h), mas fique à vontade pra já dar uma olhada no catálogo e montar seu pedido — assim que abrirmos, confirmamos tudo certinho pra você! 😊\n[LINK DO CATÁLOGO QUANDO PUBLICAR]"
+  },
+  {
+    "id": "4",
+    "tipo": "Resposta Rápida",
+    "titulo": "Enviar o catálogo",
+    "ativa": true,
+    "palavras_chave": [
+      "catálogo",
+      "produtos",
+      "o que vocês têm",
+      "ver perfumes"
+    ],
+    "resposta": "Aqui está nosso catálogo completo, com fotos, preços e a opção de pedir direto por aqui: [LINK DO CATÁLOGO QUANDO PUBLICAR]"
+  },
+  {
+    "id": "5",
+    "tipo": "Resposta Rápida",
+    "titulo": "O que é Tester",
+    "ativa": true,
+    "palavras_chave": [
+      "tester",
+      "o que é tester",
+      "é original",
+      "tem caixa"
+    ],
+    "resposta": "Tester é perfume 100% original, só que vem sem a caixa e/ou sem a tampa de fábrica — por isso o fornecedor dá um desconto, que a gente repassa pra você. A foto do produto no catálogo é a original, de como ele chega. 😉"
+  },
+  {
+    "id": "6",
+    "tipo": "Follow-up",
+    "titulo": "Cliente sumiu depois do catálogo",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "Oi! Conseguiu localizar o perfume do seu interesse? Caso queira algum específico que não está no catálogo, me informe aqui que podemos verificar se temos no estoque e foi esquecido de lançar. 😊",
+    "notaInterna": "Não automatizado nesta versão — envio manual quando o vendedor perceber ~1h de silêncio após o catálogo."
+  },
+  {
+    "id": "7",
+    "tipo": "Fallback",
+    "titulo": "Não entendi / fora do script",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "Aguarde um momento que vou verificar para você! 🙏",
+    "notaInterna": "Marcar a conversa como NÃO LIDA no WhatsApp. A partir daqui o vendedor assume esse cliente — não usar mais respostas do bot com ele pelo resto do dia."
+  },
+  {
+    "id": "15",
+    "tipo": "Fallback Fora do Horário",
+    "titulo": "Não entendi / fora do script, fora do horário",
+    "ativa": true,
+    "palavras_chave": [],
+    "resposta": "No momento estamos fora do nosso horário de atendimento (09h às 18h). Assim que abrirmos, te respondemos! 😊",
+    "notaInterna": "Marcar a conversa como NÃO LIDA no WhatsApp. A partir daqui o vendedor assume esse cliente — não usar mais respostas do bot com ele pelo resto do dia."
+  },
+  {
+    "id": "8",
+    "tipo": "Resposta Rápida",
+    "titulo": "Formas de pagamento",
+    "ativa": true,
+    "palavras_chave": [
+      "pagamento",
+      "pix",
+      "cartão",
+      "como pago",
+      "forma de pagamento"
+    ],
+    "resposta": "Aceitamos Pix, Cartão de Débito, Cartão de Crédito e Dinheiro. 💳💵"
+  },
+  {
+    "id": "9",
+    "tipo": "Resposta Rápida",
+    "titulo": "Prazo e área de entrega",
+    "ativa": true,
+    "palavras_chave": [
+      "entrega",
+      "prazo",
+      "quanto tempo demora",
+      "chega quando",
+      "frete"
+    ],
+    "resposta": "Entregamos em todo o Brasil! O prazo varia entre 1 e 10 dias, dependendo da sua região. 📦"
+  },
+  {
+    "id": "10",
+    "tipo": "Resposta Rápida",
+    "titulo": "Retirada sem horário informado",
+    "ativa": true,
+    "palavras_chave": [
+      "vou retirar",
+      "retirada",
+      "passo aí",
+      "passo pra pegar",
+      "vou buscar"
+    ],
+    "resposta": "Para retirar seu pedido é obrigatório informar o horário, já que trabalhamos com atendimento personalizado. Pode me confirmar que horas você pretende passar aqui? 🕐"
+  },
+  {
+    "id": "11",
+    "tipo": "Resposta Rápida",
+    "titulo": "Promoções ativas",
+    "ativa": false,
+    "palavras_chave": [
+      "promoção",
+      "desconto",
+      "tem promoção"
+    ],
+    "resposta": "No momento não temos promoção ativa, mas fica de olho no catálogo — assim que tiver eu te aviso!"
+  },
+  {
+    "id": "12",
+    "tipo": "Resposta Rápida",
+    "titulo": "Confirmação de pedido recebido",
+    "ativa": true,
+    "palavras_chave": [
+      "fiz o pedido",
+      "confirma meu pedido",
+      "gostaria de fazer um pedido"
+    ],
+    "resposta": "Perfeito, [NOME DO CLIENTE]! Recebemos seu pedido: [PRODUTO DO PEDIDO], [PRECO DO PEDIDO], pagamento via [PAGAMENTO DO PEDIDO]. Aguarde um momento que você receberá a confirmação 👍",
+    "respostaForaHorario": "Perfeito, [NOME DO CLIENTE]! Recebemos seu pedido: [PRODUTO DO PEDIDO], [PRECO DO PEDIDO], pagamento via [PAGAMENTO DO PEDIDO]. No momento estamos fora do nosso horário de atendimento (09h às 18h), mas assim que a loja abrir, confirmamos tudo certinho pra você. Um ótimo dia! 😊",
+    "notaInterna": "Depois de mandar, marcar a conversa como NÃO LIDA no WhatsApp pra o vendedor ver e confirmar a compra.",
+    "salvarPedido": true,
+    "escalar": true
+  },
+  {
+    "id": "13",
+    "tipo": "Resposta Rápida",
+    "titulo": "Perguntar disponibilidade",
+    "ativa": true,
+    "palavras_chave": [
+      "tem esse perfume",
+      "disponível",
+      "ainda tem"
+    ],
+    "resposta": "Deixa eu confirmar a disponibilidade desse perfume pra você, só um instante! 🔎"
+  },
+  {
+    "id": "14",
+    "tipo": "Resposta Rápida",
+    "titulo": "Agradecimento pós-venda",
+    "ativa": true,
+    "palavras_chave": [
+      "obrigado",
+      "valeu",
+      "chegou certinho"
+    ],
+    "resposta": "Muito obrigado pela compra! 💛 Qualquer coisa é só chamar por aqui. Se puder, adoraríamos sua avaliação — ajuda muito a gente!"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "nomeAtendente": "Jefferson",
+  "linkCatalogo": "https://clicksim1.github.io/clicksimcatalogo/",
+  "horarioAbertura": "09:00",
+  "horarioFechamento": "18:00",
+  "respostaAutomaticaAtiva": true,
+  "humanizado": true
+}

@@ -1,11 +1,10 @@
-const CHAVE_PERFUMES = "clicksim_perfumes";
 const CHAVE_CONFIG = "clicksim_config";
-const PASTA_IMAGENS = "imagens/";
+const PASTA_IMAGENS = "/EDICAO/imagens/";
 
-inicializarPainel();
+inicializarPainelPerfumes();
 
-function inicializarPainel() {
-  let perfumes = carregarPerfumes();
+async function inicializarPainelPerfumes() {
+  let perfumes = await carregarPerfumes();
   let idEmEdicao = null;
 
   const listaEl = document.getElementById("listaPerfumes");
@@ -20,9 +19,10 @@ function inicializarPainel() {
   const fCategoria = document.getElementById("fCategoria");
   const fGenero = document.getElementById("fGenero");
   const fPreco = document.getElementById("fPreco");
-  const fImagem = document.getElementById("fImagem");
-  const fImagemPreview = document.getElementById("fImagemPreview");
-  const fImagemSemFoto = document.getElementById("fImagemSemFoto");
+  const fFotos = document.getElementById("fFotos");
+  const previewFotosEl = document.getElementById("previewFotos");
+  const MAX_FOTOS = 5;
+  let fotosAtuais = [];
   const fDescricao = document.getElementById("fDescricao");
   const fMaisVendido = document.getElementById("fMaisVendido");
   const fPromocao = document.getElementById("fPromocao");
@@ -43,30 +43,47 @@ function inicializarPainel() {
   }
 
   function normalizarImagem(p) {
-    if (p.imagem && p.imagem.startsWith("imagens/")) {
-      p.imagem = p.imagem.slice("imagens/".length);
+    if (Array.isArray(p.imagens)) {
+      p.imagens = p.imagens.slice(0, MAX_FOTOS);
+    } else if (p.imagem) {
+      let img = p.imagem;
+      if (img.startsWith("imagens/")) img = img.slice("imagens/".length);
+      p.imagens = [img];
+    } else {
+      p.imagens = [];
     }
+    delete p.imagem;
     return p;
   }
 
-  function carregarPerfumes() {
+  function resolverImagem(src) {
+    if (!src) return "";
+    return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
+  }
+
+  async function carregarPerfumes() {
     try {
-      const salvos = localStorage.getItem(CHAVE_PERFUMES);
-      if (salvos) {
-        const lista = JSON.parse(salvos);
-        if (Array.isArray(lista) && lista.length > 0) return lista.map(normalizarImagem);
+      const resp = await fetch("/api/perfumes");
+      if (resp.ok) {
+        const lista = await resp.json();
+        if (Array.isArray(lista)) return lista.map(normalizarImagem);
       }
     } catch (erro) {
-      console.warn("Não foi possível ler o catálogo salvo:", erro);
+      console.warn("Não foi possível carregar o catálogo do servidor:", erro);
     }
     return typeof PERFUMES !== "undefined" ? JSON.parse(JSON.stringify(PERFUMES)).map(normalizarImagem) : [];
   }
 
-  function salvar() {
+  async function salvar() {
     try {
-      localStorage.setItem(CHAVE_PERFUMES, JSON.stringify(perfumes));
+      await fetch("/api/perfumes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(perfumes)
+      });
     } catch (erro) {
-      console.warn("Não foi possível salvar no localStorage:", erro);
+      console.warn("Não foi possível salvar no servidor:", erro);
+      alert("Não foi possível salvar as alterações no servidor. Verifique sua conexão e tente de novo.");
     }
   }
 
@@ -79,7 +96,7 @@ function inicializarPainel() {
     totalEl.textContent = perfumes.length;
 
     if (perfumes.length === 0) {
-      listaEl.innerHTML = '<p class="sem-resultados">Nenhum produto cadastrado ainda.</p>';
+      listaEl.innerHTML = '<p class="vazio">Nenhum produto cadastrado ainda.</p>';
       return;
     }
 
@@ -89,7 +106,7 @@ function inicializarPainel() {
       <div class="item-perfume" draggable="true" data-indice="${indice}">
         <span class="item-arraste">☰</span>
         <div class="item-foto">
-          <img src="${p.imagem ? PASTA_IMAGENS + p.imagem : ""}" alt="${p.nome}" onerror="this.parentElement.innerHTML='<span class=\\'sem-foto\\'>Sem foto</span>'">
+          <img src="${resolverImagem(p.imagens && p.imagens[0])}" alt="${p.nome}" onerror="this.parentElement.innerHTML='<span class=\\'sem-foto\\'>Sem foto</span>'">
         </div>
         <div class="item-info">
           <div class="item-marca">${p.marca}</div>
@@ -103,8 +120,8 @@ function inicializarPainel() {
         </div>
         <div class="item-preco">${formatarPreco(p.preco)}</div>
         <div class="item-botoes">
-          <button type="button" class="btn-editar" data-indice="${indice}">Editar</button>
-          <button type="button" class="btn-excluir" data-indice="${indice}">Excluir</button>
+          <button type="button" class="btn btn-secundario btn-editar" data-indice="${indice}">Editar</button>
+          <button type="button" class="btn btn-perigo btn-excluir" data-indice="${indice}">Excluir</button>
         </div>
       </div>
     `
@@ -156,7 +173,8 @@ function inicializarPainel() {
     form.reset();
     fCategoria.value = "Perfume";
     fGenero.value = "Feminino";
-    atualizarPreviewImagem();
+    fotosAtuais = [];
+    renderizarPreviewFotos();
     tituloForm.textContent = "Adicionar novo perfume";
     btnSalvarProduto.textContent = "Adicionar produto";
     btnCancelarEdicao.hidden = true;
@@ -170,11 +188,11 @@ function inicializarPainel() {
     fCategoria.value = p.categoria || "Perfume";
     fGenero.value = p.genero || "Feminino";
     fPreco.value = p.preco === null || p.preco === undefined ? "" : p.preco;
-    fImagem.value = p.imagem || "";
     fDescricao.value = p.descricao || "";
     fMaisVendido.checked = !!p.maisVendido;
     fPromocao.checked = !!p.promocao;
-    atualizarPreviewImagem();
+    fotosAtuais = [...(p.imagens || [])];
+    renderizarPreviewFotos();
     tituloForm.textContent = "Editando: " + p.nome;
     btnSalvarProduto.textContent = "Salvar alterações";
     btnCancelarEdicao.hidden = false;
@@ -190,24 +208,57 @@ function inicializarPainel() {
     if (idEmEdicao === indice) limparFormulario();
   }
 
-  function atualizarPreviewImagem() {
-    const caminho = fImagem.value.trim();
-    if (!caminho) {
-      fImagemPreview.hidden = true;
-      fImagemSemFoto.hidden = false;
-      return;
-    }
-    fImagemPreview.src = PASTA_IMAGENS + caminho;
-    fImagemPreview.hidden = false;
-    fImagemSemFoto.hidden = true;
-    fImagemPreview.onerror = () => {
-      fImagemPreview.hidden = true;
-      fImagemSemFoto.hidden = false;
-      fImagemSemFoto.textContent = "Não achei essa imagem em EDICAO/imagens/";
-    };
+  function renderizarPreviewFotos() {
+    previewFotosEl.innerHTML =
+      fotosAtuais
+        .map(
+          (src, i) => `
+      <div class="foto-preview-item">
+        <img src="${resolverImagem(src)}" alt="Foto ${i + 1}">
+        <button type="button" class="btn-remover-foto" data-indice="${i}" aria-label="Remover foto">×</button>
+      </div>
+    `
+        )
+        .join("") || '<span class="sem-foto">Nenhuma foto adicionada ainda</span>';
+
+    previewFotosEl.querySelectorAll(".btn-remover-foto").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        fotosAtuais.splice(Number(btn.dataset.indice), 1);
+        renderizarPreviewFotos();
+      });
+    });
   }
 
-  fImagem.addEventListener("input", atualizarPreviewImagem);
+  function lerArquivoComoDataURL(arquivo) {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+      leitor.onload = () => resolve(leitor.result);
+      leitor.onerror = reject;
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function adicionarFotos(arquivos) {
+    const espacoLivre = MAX_FOTOS - fotosAtuais.length;
+    if (espacoLivre <= 0) {
+      alert(`Máximo de ${MAX_FOTOS} fotos por produto.`);
+      return;
+    }
+    const selecionados = Array.from(arquivos).slice(0, espacoLivre);
+    for (const arquivo of selecionados) {
+      try {
+        fotosAtuais.push(await lerArquivoComoDataURL(arquivo));
+      } catch (erro) {
+        console.warn("Não foi possível ler a imagem:", erro);
+      }
+    }
+    renderizarPreviewFotos();
+  }
+
+  fFotos.addEventListener("change", (e) => {
+    adicionarFotos(e.target.files);
+    fFotos.value = "";
+  });
 
   form.addEventListener("submit", (e) => {
     e.preventDefault();
@@ -218,7 +269,7 @@ function inicializarPainel() {
       categoria: fCategoria.value,
       preco: fPreco.value === "" ? null : Number(fPreco.value),
       genero: fGenero.value,
-      imagem: fImagem.value.trim(),
+      imagens: [...fotosAtuais],
       descricao: fDescricao.value.trim(),
     };
     if (fMaisVendido.checked) dados.maisVendido = true;
@@ -248,14 +299,14 @@ function inicializarPainel() {
       ];
       if (p.maisVendido) campos.push(`    maisVendido: true`);
       if (p.promocao) campos.push(`    promocao: true`);
-      campos.push(`    imagem: ${JSON.stringify(p.imagem || "")}`);
+      campos.push(`    imagens: ${JSON.stringify(p.imagens || [])}`);
       campos.push(`    descricao: ${JSON.stringify(p.descricao || "")}`);
       return "  {\n" + campos.join(",\n") + "\n  }";
     });
 
     return (
       `// Edite esta lista para adicionar, remover ou alterar produtos.\n` +
-      `// "imagem" é só o nome do arquivo dentro da pasta EDICAO/imagens (sem caminho).\n` +
+      `// "imagens" é uma lista com até 5 fotos: nome de arquivo em EDICAO/imagens, ou foto embutida (data:...).\n` +
       `// Se "preco" for null, o card mostra "Consulte o valor".\n` +
       `const PERFUMES = [\n${blocos.join(",\n")}\n];\n`
     );
@@ -275,12 +326,7 @@ function inicializarPainel() {
   });
 
   document.getElementById("btnRestaurar").addEventListener("click", () => {
-    if (!confirm("Isso apaga as alterações salvas neste navegador e volta pro catálogo original do arquivo perfumes.js. Continuar?")) return;
-    try {
-      localStorage.removeItem(CHAVE_PERFUMES);
-    } catch (erro) {
-      console.warn("Não foi possível limpar o localStorage:", erro);
-    }
+    if (!confirm("Isso apaga as alterações salvas no servidor e volta pro catálogo original do arquivo perfumes.js. Continuar?")) return;
     perfumes = typeof PERFUMES !== "undefined" ? JSON.parse(JSON.stringify(PERFUMES)) : [];
     salvar();
     renderizarLista();
