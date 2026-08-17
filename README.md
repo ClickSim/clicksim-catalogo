@@ -31,12 +31,15 @@ esqueleto. Segue o padrão de organização usado nos catálogos/cardápios da c
   servidor ligado; atualiza sozinho (leva 1-2 min) a cada `git push` na branch `main`. Esse é o
   link novo pra passar pro cliente (o antigo, `clicksim1.github.io/clicksimcatalogo/...`, parou de
   ser atualizado).
-- **Painel (`BOT-SERVER`)**: hoje roda **local**, dando duplo clique em `iniciar.vbs` num
-  computador específico (ver `BOT-SERVER/PASSO_A_PASSO_INSTALACAO.md`). Só funciona nesse
-  computador, enquanto ele estiver ligado — **não é acessível do celular ou de outro lugar ainda**.
-  Uma DigitalOcean foi mencionada/explorada em algum momento, mas **não está confirmado** que o
-  `BOT-SERVER` roda lá hoje — isso precisa ser verificado/configurado à parte pra cumprir o
-  objetivo de edição pelo celular (ver aviso na seção abaixo).
+- **Painel (`BOT-SERVER`)**: roda de verdade no **Droplet DigitalOcean `clicksim-bot`**
+  (`167.99.150.99`), gerenciado por PM2 (processo `clicksim-bot`), online 24h — **não** é só local
+  (o `iniciar.vbs`/`PASSO_A_PASSO_INSTALACAO.md` descrevem um modo alternativo de rodar na sua
+  própria máquina, mas o que está em produção é o Droplet). Acessível de qualquer lugar, celular
+  incluso, em `https://167-99-150-99.sslip.io/` (login: ver `PAINEL_USUARIO`/`PAINEL_SENHA` em
+  `server.js`). HTTPS via nginx + Let's Encrypt, domínio gratuito `sslip.io` (resolve sozinho pro
+  IP do Droplet — não precisa configurar DNS). Esse Droplet também já rodava o bot de WhatsApp
+  real do cliente havia 9+ dias antes dessa atualização — **nunca reiniciar/mexer na pasta `auth/`
+  nem `data/` de lá sem cuidado**, é sessão e histórico reais.
 
 ## Cadastro de perfumes (autonomia do cliente)
 
@@ -58,24 +61,32 @@ novo.
   de adicionar/editar/excluir/reordenar um produto.
 - Os dados ficam em `BOT-SERVER/data/perfumes.json` (arquivo real no servidor, não no navegador).
 
-Resultado (assim que a pendência abaixo for resolvida): o cliente cadastra um produto no painel →
-aparece no catálogo público na hora, pra qualquer pessoa, em qualquer dispositivo. Não precisa
-mais baixar `perfumes.js`, substituir arquivo, nem `git push` pra publicar um produto novo.
+Resultado: o cliente cadastra um produto no painel (`https://167-99-150-99.sslip.io/`, de
+qualquer dispositivo) → aparece no catálogo público (GitHub Pages) na hora, pra qualquer pessoa.
+Não precisa mais baixar `perfumes.js`, substituir arquivo, nem `git push` pra publicar um produto
+novo. **Confirmado funcionando de ponta a ponta em 2026-08-17.**
 
 **O que ainda precisa de `git push` + redeploy:** só mudanças de **código** (`server.js`,
 `script.js`, `style.css`, etc.), não de produtos. `EDICAO/perfumes.js` continua no repo como
 fallback (usado só se a API cair), mas não é mais editado no dia a dia — não se preocupe se ele
 ficar desatualizado em relação ao `data/perfumes.json` do servidor.
 
-**⚠️ Pendência pra funcionar do celular/de qualquer lugar:** hoje o `SISTEMA/script.js` busca os
-produtos em `fetch("/api/perfumes")` — um caminho relativo, que só funciona se `BOT-SERVER` for o
-mesmo servidor que serve o `SISTEMA/` (mesma origem/domínio). Como o catálogo público está no
-**GitHub Pages** (`clicksim1.github.io`) e o `BOT-SERVER` roda **local** (não num servidor sempre
-ligado), essas duas coisas hoje estão em lugares diferentes — o `fetch` relativo não alcança o
-painel local. Falta decidir e configurar **onde o `BOT-SERVER` vai rodar de forma permanente**
-(um servidor sempre ligado, tipo um Droplet DigitalOcean de verdade) e então trocar o `fetch` em
-`SISTEMA/script.js` pra apontar pro endereço absoluto desse servidor (com CORS liberado). Sem
-isso, o cadastro funciona local mas **ainda não** atualiza o catálogo publicado sozinho.
+`SISTEMA/script.js` busca os produtos em `API_PERFUMES` (uma URL **absoluta**, não relativa —
+necessário porque o catálogo vive no GitHub Pages e o `BOT-SERVER` no Droplet, origens diferentes;
+CORS liberado só nessa rota em `server.js`). Se o endereço do Droplet mudar um dia, atualizar essa
+constante em `SISTEMA/script.js` e dar `git push`.
+
+**Como atualizar o código no Droplet** (o `/root/whatsapp-bot-clicksim` de lá **não é um repositório
+git** — foi implantado originalmente via `scp` manual): depois de dar `git push` nas mudanças de
+código, entrar no Web Console do Droplet `clicksim-bot` (painel DigitalOcean → Droplets →
+`clicksim-bot` → Web Console) e baixar os arquivos atualizados direto do GitHub, por exemplo:
+```
+cd /root/whatsapp-bot-clicksim
+curl -sL -o server.js https://raw.githubusercontent.com/ClickSim/clicksim-catalogo/main/BOT-SERVER/server.js
+pm2 restart clicksim-bot
+```
+Repetir pra cada arquivo que mudou (trocando o caminho). **Nunca** sobrescrever `auth/` ou `data/`
+dessa forma — são a sessão do WhatsApp e os dados reais do cliente, não fazem parte do código.
 
 ## Publicando o site
 
@@ -85,6 +96,21 @@ estrutura de subpastas — os caminhos entre `SISTEMA` e `EDICAO` são relativos
 **Atenção:** os nomes das pastas são propositalmente sem acento (`EDICAO`, não `EDIÇÃO`) porque
 viram parte do endereço (URL) do site quando publicado, e acentos/cedilha em URL podem dar
 problema dependendo do servidor. Mantenha assim nas próximas atualizações.
+
+## Infraestrutura do Droplet clicksim-bot (167.99.150.99) — 2026-08-17
+
+Conta DigitalOcean da consultoria. Tem 2 Droplets nessa conta — não confundir:
+- `clicksim-bot` (167.99.150.99) — este projeto.
+- `descomplique-delivery` (167.99.7.209) — projeto diferente, não mexer aqui por engano (os dois
+  tinham nome genérico idêntico antes de serem renomeados).
+
+No `clicksim-bot`: nginx instalado como proxy reverso (porta 443 para localhost:3000), certificado
+Let's Encrypt para `167-99-150-99.sslip.io` (renova sozinho via certbot, timer systemd já vem
+instalado por padrão). Firewall (ufw) libera 22, 80 e 443. Config do nginx em
+`/etc/nginx/sites-available/clicksim-bot`. sslip.io é um serviço de DNS gratuito que resolve
+`167-99-150-99.sslip.io` para o IP automaticamente, sem precisar configurar nada. Se um domínio de
+verdade for configurado no lugar, trocar tanto o server_name do nginx quanto API_PERFUMES em
+SISTEMA/script.js, e rodar certbot de novo.
 
 ## Acesso ao GitHub deste repositório (histórico — atualizado em 2026-08-17)
 
