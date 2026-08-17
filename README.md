@@ -25,8 +25,10 @@ esqueleto. Segue o padrão de organização usado nos catálogos/cardápios da c
 ## Onde cada coisa roda hoje (2026-08-17)
 
 - **Catálogo público (`SISTEMA/`)**: publicado via **GitHub Pages**, direto do repositório
-  `clicksim1/clicksimcatalogo` — `https://clicksim1.github.io/clicksimcatalogo/SISTEMA/index.html`.
-  Não depende de nenhum servidor ligado; atualiza sozinho a cada `git push` na branch `main`.
+  `ClickSim/clicksim-catalogo` (migrado em 2026-08-17, ver seção "Acesso ao GitHub" abaixo) —
+  `https://clicksim.github.io/clicksim-catalogo/SISTEMA/index.html` assim que o Pages for
+  habilitado nesse repositório. Não depende de nenhum servidor ligado; atualiza sozinho a cada
+  `git push` na branch `main`.
 - **Painel (`BOT-SERVER`)**: hoje roda **local**, dando duplo clique em `iniciar.vbs` num
   computador específico (ver `BOT-SERVER/PASSO_A_PASSO_INSTALACAO.md`). Só funciona nesse
   computador, enquanto ele estiver ligado — **não é acessível do celular ou de outro lugar ainda**.
@@ -81,3 +83,23 @@ estrutura de subpastas — os caminhos entre `SISTEMA` e `EDICAO` são relativos
 **Atenção:** os nomes das pastas são propositalmente sem acento (`EDICAO`, não `EDIÇÃO`) porque
 viram parte do endereço (URL) do site quando publicado, e acentos/cedilha em URL podem dar
 problema dependendo do servidor. Mantenha assim nas próximas atualizações.
+
+## Acesso ao GitHub deste repositório (histórico — atualizado em 2026-08-17)
+
+**Mudança de repositório em 2026-08-17:** o projeto migrou de `clicksim1/clicksimcatalogo` pra
+**`ClickSim/clicksim-catalogo`**. Motivo: ninguém lembrava a senha da conta `clicksim1` (dona do
+repositório antigo), e não dava pra confirmar se a conta `ClickSim` tinha permissão de escrita
+nele. A conta `ClickSim` é dona do novo repositório, então tem acesso garantido, sem depender de
+ninguém mais. **Efeito colateral: o link público do catálogo muda** — o antigo
+(`clicksim1.github.io/clicksimcatalogo/...`) deixa de ser atualizado; o cliente precisa receber o
+link novo depois que o GitHub Pages for habilitado no repositório novo (`Settings` → `Pages` →
+Source: branch `main`, pasta `/ (root)`).
+
+**Histórico do problema de acesso (repositório antigo):** esse repositório pertencia à conta GitHub
+`clicksim1` mas também tinha commits da conta `ClickSim`, diferente da conta pessoal/da consultoria
+(`Descompliqueconsultorias`) usada em outros projetos. O Gerenciador de Credenciais do Windows
+guarda só **um** login por site (`git:https://github.com`), compartilhado entre todos os projetos
+GitHub usados nesse computador — toda vez que se logava em outro projeto com
+`Descompliqueconsultorias`, isso sobrescrevia o login salvo do Click Sim, e o próximo `git push`
+falhava com erro 403. Isso ainda vale como risco pro repositório novo: evitar misturar login de
+contas diferentes na mesma máquina sem um token dedicado.
