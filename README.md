@@ -18,9 +18,9 @@ esqueleto. Segue o padrão de organização usado nos catálogos/cardápios da c
   `EDICAO/painel.html`.
 - **REMARKETING/** — reservado para a planilha de contatos/leads (ver `REMARKETING/README.md`)
 - **BOT-SERVER/** — servidor Node com o painel unificado (atendente WhatsApp + cadastro de
-  perfumes) e a API do catálogo (`/api/perfumes`). Ver `## Cadastro de perfumes (autonomia do
-  cliente)` abaixo pra entender como isso funciona, por que existe, e **o que ainda falta** pra
-  funcionar de qualquer lugar (celular incluso).
+  perfumes) e a API do catálogo (`/api/perfumes`), rodando 24h no Droplet DigitalOcean
+  `clicksim-bot`. Ver `## Cadastro de perfumes (autonomia do cliente)` abaixo pra entender como
+  isso funciona — já testado e funcionando de qualquer lugar, celular incluso.
 
 ## Onde cada coisa roda hoje (2026-08-17)
 
