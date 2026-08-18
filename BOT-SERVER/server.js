@@ -484,6 +484,11 @@ app.get('/api/perfumes', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.json(lerJSON(ARQ_PERFUMES, []));
 });
+app.get('/api/numero-whatsapp', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const config = lerJSON(ARQ_CONFIG, {});
+  res.json({ numeroWhatsapp: config.numeroWhatsapp || '' });
+});
 app.use('/SISTEMA', express.static(PASTA_SISTEMA));
 app.use('/EDICAO/imagens', express.static(PASTA_IMAGENS_CATALOGO));
 

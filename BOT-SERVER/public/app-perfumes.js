@@ -29,17 +29,17 @@ async function inicializarPainelPerfumes() {
 
   const fWhatsapp = document.getElementById("fWhatsapp");
 
-  function carregarNumeroWhatsapp() {
+  async function carregarNumeroWhatsapp() {
     try {
-      const salvo = localStorage.getItem(CHAVE_CONFIG);
-      if (salvo) {
-        const config = JSON.parse(salvo);
+      const resp = await fetch("/api/config");
+      if (resp.ok) {
+        const config = await resp.json();
         if (config && config.numeroWhatsapp) return config.numeroWhatsapp;
       }
     } catch (erro) {
-      console.warn("Não foi possível ler a configuração salva:", erro);
+      console.warn("Não foi possível carregar o número salvo:", erro);
     }
-    return typeof NUMERO_WHATSAPP !== "undefined" ? NUMERO_WHATSAPP : "";
+    return "";
   }
 
   function normalizarImagem(p) {
@@ -325,7 +325,7 @@ async function inicializarPainelPerfumes() {
     URL.revokeObjectURL(url);
   });
 
-  document.getElementById("btnSalvarWhatsapp").addEventListener("click", () => {
+  document.getElementById("btnSalvarWhatsapp").addEventListener("click", async () => {
     const numero = fWhatsapp.value.replace(/\D/g, "");
     if (!numero) {
       alert("Digite o número de WhatsApp (só números, com DDI+DDD).");
@@ -333,30 +333,31 @@ async function inicializarPainelPerfumes() {
     }
     fWhatsapp.value = numero;
     try {
-      localStorage.setItem(CHAVE_CONFIG, JSON.stringify({ numeroWhatsapp: numero }));
-      alert("Número salvo neste navegador. Clique em \"Baixar config.js atualizado\" e substitua o arquivo antes de publicar.");
+      await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numeroWhatsapp: numero })
+      });
+      alert("Número salvo! Já atualizou no catálogo.");
     } catch (erro) {
-      console.warn("Não foi possível salvar a configuração:", erro);
+      console.warn("Não foi possível salvar o número:", erro);
+      alert("Não foi possível salvar. Verifique sua conexão e tente de novo.");
     }
   });
 
-  document.getElementById("btnBaixarConfig").addEventListener("click", () => {
-    const numero = fWhatsapp.value.replace(/\D/g, "") || carregarNumeroWhatsapp();
-    const texto =
-      `// Número de WhatsApp da loja: DDI + DDD + número, só dígitos (ex: 5547988587295).\n` +
-      `const NUMERO_WHATSAPP = ${JSON.stringify(numero)};\n`;
-    const blob = new Blob([texto], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "config.js";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
+  const btnAtualizarProdutos = document.getElementById("btnAtualizarProdutos");
+  if (btnAtualizarProdutos) {
+    btnAtualizarProdutos.addEventListener("click", async () => {
+      btnAtualizarProdutos.disabled = true;
+      btnAtualizarProdutos.textContent = "Atualizando...";
+      perfumes = await carregarPerfumes();
+      renderizarLista();
+      btnAtualizarProdutos.disabled = false;
+      btnAtualizarProdutos.textContent = "🔄 Atualizar produtos";
+    });
+  }
 
-  fWhatsapp.value = carregarNumeroWhatsapp();
+  fWhatsapp.value = await carregarNumeroWhatsapp();
 
   limparFormulario();
   renderizarLista();

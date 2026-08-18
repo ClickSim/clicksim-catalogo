@@ -5,7 +5,20 @@ const busca = document.getElementById("busca");
 const filtroCategoria = document.getElementById("filtroCategoria");
 const filtroGenero = document.getElementById("filtroGenero");
 document.getElementById("ano").textContent = new Date().getFullYear();
-document.getElementById("linkWhatsappTopo").href = `https://wa.me/${NUMERO_WHATSAPP}`;
+
+let numeroWhatsappAtivo = typeof NUMERO_WHATSAPP !== "undefined" ? NUMERO_WHATSAPP : "";
+document.getElementById("linkWhatsappTopo").href = `https://wa.me/${numeroWhatsappAtivo}`;
+
+const API_NUMERO_WHATSAPP = "https://167-99-150-99.sslip.io/api/numero-whatsapp";
+fetch(API_NUMERO_WHATSAPP)
+  .then((resp) => (resp.ok ? resp.json() : null))
+  .then((dados) => {
+    if (dados && dados.numeroWhatsapp) {
+      numeroWhatsappAtivo = dados.numeroWhatsapp;
+      document.getElementById("linkWhatsappTopo").href = `https://wa.me/${numeroWhatsappAtivo}`;
+    }
+  })
+  .catch((erro) => console.warn("Não foi possível carregar o número do WhatsApp do servidor, usando o fixo:", erro));
 
 const modalFundo = document.getElementById("modalFundo");
 const modalPerfume = document.getElementById("modalPerfume");
@@ -72,7 +85,7 @@ function formatarPreco(valor) {
 
 function linkWhatsAppBase(p) {
   const mensagem = `Olá! Tenho interesse no produto: ${p.marca} - ${p.nome} (${formatarPreco(p.preco)}). Poderia me ajudar com o pedido?`;
-  return `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
+  return `https://wa.me/${numeroWhatsappAtivo}?text=${encodeURIComponent(mensagem)}`;
 }
 
 function renderizar(lista) {
@@ -212,7 +225,7 @@ document.getElementById("enviarPedido").addEventListener("click", () => {
     mensagem += `*Horário de retirada:* ${horario}`;
   }
 
-  const link = `https://wa.me/${NUMERO_WHATSAPP}?text=${encodeURIComponent(mensagem)}`;
+  const link = `https://wa.me/${numeroWhatsappAtivo}?text=${encodeURIComponent(mensagem)}`;
   window.location.href = link;
   fecharModal();
 });
