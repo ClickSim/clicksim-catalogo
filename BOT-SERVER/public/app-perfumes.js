@@ -1,5 +1,5 @@
 const CHAVE_CONFIG = "clicksim_config";
-const PASTA_IMAGENS = "/EDICAO/imagens/";
+const PASTA_IMAGENS = "https://clicksim.github.io/clicksim-catalogo/EDICAO/imagens/";
 
 inicializarPainelPerfumes();
 
