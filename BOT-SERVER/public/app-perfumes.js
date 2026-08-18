@@ -325,14 +325,6 @@ async function inicializarPainelPerfumes() {
     URL.revokeObjectURL(url);
   });
 
-  document.getElementById("btnRestaurar").addEventListener("click", () => {
-    if (!confirm("Isso apaga as alterações salvas no servidor e volta pro catálogo original do arquivo perfumes.js. Continuar?")) return;
-    perfumes = typeof PERFUMES !== "undefined" ? JSON.parse(JSON.stringify(PERFUMES)) : [];
-    salvar();
-    renderizarLista();
-    limparFormulario();
-  });
-
   document.getElementById("btnSalvarWhatsapp").addEventListener("click", () => {
     const numero = fWhatsapp.value.replace(/\D/g, "");
     if (!numero) {
