@@ -109,8 +109,18 @@ Pages evita ter que manter uma cópia das imagens sincronizada nos dois lugares.
 **Limite de tamanho de requisição** (`server.js`, `express.json({ limit: '50mb' })`): o padrão do
 Express é só 100kb, muito pouco pra fotos em base64 anexadas no painel — causava
 `PayloadTooLargeError` no log e o salvamento falhava sem aviso claro pro cliente. Corrigido em
-2026-08-19. Se voltar a acontecer com fotos muito grandes/muitas fotos de uma vez, considerar subir
-esse limite ainda mais.
+2026-08-19.
+
+**Fotos como arquivo real** (`server.js`, rota `POST /api/upload-imagem`; `app-perfumes.js`,
+função `enviarFotoParaServidor`): quando o cliente avisou que ia cadastrar ~100 produtos com média
+de 5 fotos cada, ficou claro que só aumentar o limite acima não seria suficiente/sustentável — cada
+salvamento reenvia o catálogo inteiro, então fotos embutidas em base64 deixariam isso cada vez mais
+pesado e lento. A correção definitiva: cada foto escolhida no painel é enviada na hora pro endpoint
+de upload, que salva um arquivo real em `data/imagens-produtos/` e devolve uma URL pública
+(servida com CORS liberado). O produto guarda só essa URL (texto curto), não mais a foto inteira.
+`resolverImagem()` (painel e catálogo) trata 3 formatos: nome de arquivo (fotos antigas do seed,
+resolve pro GitHub Pages), URL completa (`http...`, fotos novas), e `data:` (mantido só como
+fallback de segurança, não deveria mais ocorrer em uso normal).
 
 **Número de WhatsApp da loja** (usado nos links "Comprar" do catálogo) segue o mesmo padrão:
 `GET /api/numero-whatsapp` (pública, CORS liberado) e `POST /api/config` (exige login, o painel
