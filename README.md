@@ -22,6 +22,32 @@ esqueleto. Segue o padrão de organização usado nos catálogos/cardápios da c
   `clicksim-bot`. Ver `## Cadastro de perfumes (autonomia do cliente)` abaixo — já testado e
   funcionando de qualquer lugar, celular incluso.
 
+## Checklist de verificação (se algo parecer errado)
+
+Rode isso pra descobrir rápido onde está o problema, antes de sair mexendo:
+
+```
+# 1. Catálogo público está no ar?
+curl -s -o /dev/null -w "Catalogo: HTTP %{http_code}\n" https://clicksim.github.io/clicksim-catalogo/SISTEMA/index.html
+
+# 2. API de produtos responde e com quantos produtos?
+curl -s https://167-99-150-99.sslip.io/api/perfumes | node -e "let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.parse(d).length,'produtos'))"
+
+# 3. Painel exige login (401 sem, 200 com)?
+curl -s -o /dev/null -w "sem login: %{http_code}\n" https://167-99-150-99.sslip.io/
+curl -s -o /dev/null -w "com login: %{http_code}\n" -u clicksim:clicksim2026 https://167-99-150-99.sslip.io/
+
+# 4. Servidor e bot de WhatsApp online? (precisa da chave SSH, ver seção de Infraestrutura)
+ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99 'pm2 list'
+
+# 5. Auto-deploy funcionando (não está com o script vazio de novo)?
+ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99 'wc -l /root/whatsapp-bot-clicksim/auto-update.sh; tail -5 /root/whatsapp-bot-clicksim/auto-update.log'
+```
+
+Se `pm2 list` não rodar (chave SSH não autorizada/perdida): usar o Web Console pelo navegador —
+painel DigitalOcean → Droplets → `clicksim-bot` → Console — e reautorizar uma chave nova (ver
+seção "Acesso SSH direto" abaixo).
+
 ## Onde cada coisa roda hoje (atualizado em 2026-08-18)
 
 - **Catálogo público (`SISTEMA/`)**: publicado via **GitHub Pages**, direto deste repositório
