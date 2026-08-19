@@ -80,17 +80,20 @@ Corrigido em 2026-08-18 depois que o painel mostrou "Sem foto" em todos os produ
 antigo (`/EDICAO/imagens/`, relativo ao próprio Droplet) sempre dava 401/404 lá. Buscar do GitHub
 Pages evita ter que manter uma cópia das imagens sincronizada nos dois lugares.
 
-**Como atualizar o código no Droplet** (o `/root/whatsapp-bot-clicksim` de lá **não é um repositório
-git** — foi implantado originalmente via `scp` manual): depois de dar `git push` nas mudanças de
-código, entrar no Web Console do Droplet `clicksim-bot` (painel DigitalOcean → Droplets →
-`clicksim-bot` → Web Console) e baixar os arquivos atualizados direto do GitHub, por exemplo:
-```
-cd /root/whatsapp-bot-clicksim
-curl -sL -o server.js https://raw.githubusercontent.com/ClickSim/clicksim-catalogo/main/BOT-SERVER/server.js
-pm2 restart clicksim-bot
-```
-Repetir pra cada arquivo que mudou (trocando o caminho). **Nunca** sobrescrever `auth/` ou `data/`
-dessa forma — são a sessão do WhatsApp e os dados reais do cliente, não fazem parte do código.
+**Número de WhatsApp da loja** (usado nos links "Comprar" do catálogo) segue o mesmo padrão:
+`GET /api/numero-whatsapp` (pública, CORS liberado) e `POST /api/config` (exige login, o painel
+salva por aqui). Botão "Salvar número" no painel grava direto no servidor — sem baixar `config.js`
+nem substituir arquivo manualmente.
+
+**Botões removidos do painel** (2026-08-18, achados confusos/arriscados pelo cliente): "Restaurar
+catálogo original" (resetava tudo pro seed original sem aviso claro — risco real de apagar
+cadastros novos por engano), "Baixar config.js atualizado" e "Baixar perfumes.js atualizado"
+(fluxo manual obsoleto). Adicionado no lugar: botão "🔄 Atualizar produtos" (recarrega a lista do
+servidor, dá segurança visual de que salvou) e campo "Pesquisar produto" (filtra por nome/marca).
+
+**Como atualizar o código no Droplet:** basta dar `git push` — existe auto-deploy configurado (ver
+seção "Infraestrutura do Droplet" abaixo), chega sozinho em até 2 minutos. Só usar o método manual
+via SSH/Web Console se o auto-deploy não estiver funcionando.
 
 ## Publicando o site
 
@@ -121,6 +124,31 @@ Existe também um domínio de verdade do cliente, `clicksimperfumes.com.br` — 
 por outro desenvolvedor, hospedado em outro lugar (fora do controle dessa consultoria, sem acesso).
 Não tem relação com este projeto — decisão explícita: seguir publicando via GitHub Pages + Droplet
 mesmo assim.
+
+### Acesso SSH direto (configurado em 2026-08-18)
+
+Existe uma chave SSH em `~/.ssh/clicksim_droplet` (no computador da consultoria) já autorizada em
+`/root/.ssh/authorized_keys` no Droplet. Acesso direto, sem precisar do Web Console do navegador:
+```
+ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99
+```
+
+### Auto-deploy (BOT-SERVER não é um repositório git no Droplet)
+
+`/root/whatsapp-bot-clicksim` foi implantado via `scp` manual, não é git. Existe
+`/root/whatsapp-bot-clicksim/auto-update.sh` + um cron (`*/2 * * * *`) que baixa os arquivos de
+código do GitHub raw e reinicia o PM2 se algo mudou — um `git push` normal chega sozinho no
+Droplet em até 2 minutos.
+
+**Bug já visto**: colar um heredoc (`cat << 'SCRIPT'`) direto no Web Console do navegador pode
+corromper a colagem (aparece um código de escape antes do comando) e criar o arquivo **vazio** —
+o cron roda sem erro nem log, mas não faz nada, silenciosamente. Se o auto-update parecer que
+parou, checar primeiro se o script não está vazio:
+```
+ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99 'wc -l /root/whatsapp-bot-clicksim/auto-update.sh; tail /root/whatsapp-bot-clicksim/auto-update.log'
+```
+Recriar o script via SSH direto (não pelo Web Console) evita esse problema de colagem. **Nunca
+sobrescrever `auth/` (sessão WhatsApp) nem `data/` (dados reais) nesse processo.**
 
 ## Acesso ao GitHub deste repositório (histórico)
 
