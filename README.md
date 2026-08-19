@@ -106,6 +106,12 @@ Corrigido em 2026-08-18 depois que o painel mostrou "Sem foto" em todos os produ
 antigo (`/EDICAO/imagens/`, relativo ao próprio Droplet) sempre dava 401/404 lá. Buscar do GitHub
 Pages evita ter que manter uma cópia das imagens sincronizada nos dois lugares.
 
+**Limite de tamanho de requisição** (`server.js`, `express.json({ limit: '50mb' })`): o padrão do
+Express é só 100kb, muito pouco pra fotos em base64 anexadas no painel — causava
+`PayloadTooLargeError` no log e o salvamento falhava sem aviso claro pro cliente. Corrigido em
+2026-08-19. Se voltar a acontecer com fotos muito grandes/muitas fotos de uma vez, considerar subir
+esse limite ainda mais.
+
 **Número de WhatsApp da loja** (usado nos links "Comprar" do catálogo) segue o mesmo padrão:
 `GET /api/numero-whatsapp` (pública, CORS liberado) e `POST /api/config` (exige login, o painel
 salva por aqui). Botão "Salvar número" no painel grava direto no servidor — sem baixar `config.js`
@@ -173,7 +179,17 @@ parou, checar primeiro se o script não está vazio:
 ```
 ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99 'wc -l /root/whatsapp-bot-clicksim/auto-update.sh; tail /root/whatsapp-bot-clicksim/auto-update.log'
 ```
-Recriar o script via SSH direto (não pelo Web Console) evita esse problema de colagem. **Nunca
+Recriar o script via SSH direto (não pelo Web Console) evita esse problema de colagem.
+
+**Outro bug já visto**: o CDN do `raw.githubusercontent.com` pode manter cache desatualizado por
+vários minutos no edge mais próximo do Droplet, mesmo já servindo a versão nova em outros lugares
+(um `?query=cachebust` na URL não resolve, o CDN ignora). Se uma correção não chegar mesmo depois
+de alguns minutos, bypassar o CDN mandando o arquivo direto por SSH:
+```
+curl -s "https://raw.githubusercontent.com/ClickSim/clicksim-catalogo/main/BOT-SERVER/server.js" | ssh -i ~/.ssh/clicksim_droplet root@167.99.150.99 'cat > /root/whatsapp-bot-clicksim/server.js && pm2 restart clicksim-bot'
+```
+
+**Nunca
 sobrescrever `auth/` (sessão WhatsApp) nem `data/` (dados reais) nesse processo.**
 
 ## Acesso ao GitHub deste repositório (histórico)
