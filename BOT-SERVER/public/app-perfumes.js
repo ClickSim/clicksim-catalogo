@@ -288,43 +288,6 @@ async function inicializarPainelPerfumes() {
 
   btnCancelarEdicao.addEventListener("click", limparFormulario);
 
-  function gerarTextoPerfumesJs(lista) {
-    const blocos = lista.map((p) => {
-      const campos = [
-        `    nome: ${JSON.stringify(p.nome)}`,
-        `    marca: ${JSON.stringify(p.marca)}`,
-        `    categoria: ${JSON.stringify(p.categoria)}`,
-        `    preco: ${p.preco === null || p.preco === undefined ? "null" : Number(p.preco)}`,
-        `    genero: ${JSON.stringify(p.genero)}`,
-      ];
-      if (p.maisVendido) campos.push(`    maisVendido: true`);
-      if (p.promocao) campos.push(`    promocao: true`);
-      campos.push(`    imagens: ${JSON.stringify(p.imagens || [])}`);
-      campos.push(`    descricao: ${JSON.stringify(p.descricao || "")}`);
-      return "  {\n" + campos.join(",\n") + "\n  }";
-    });
-
-    return (
-      `// Edite esta lista para adicionar, remover ou alterar produtos.\n` +
-      `// "imagens" é uma lista com até 5 fotos: nome de arquivo em EDICAO/imagens, ou foto embutida (data:...).\n` +
-      `// Se "preco" for null, o card mostra "Consulte o valor".\n` +
-      `const PERFUMES = [\n${blocos.join(",\n")}\n];\n`
-    );
-  }
-
-  document.getElementById("btnBaixar").addEventListener("click", () => {
-    const texto = gerarTextoPerfumesJs(perfumes);
-    const blob = new Blob([texto], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "perfumes.js";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
   document.getElementById("btnSalvarWhatsapp").addEventListener("click", async () => {
     const numero = fWhatsapp.value.replace(/\D/g, "");
     if (!numero) {
