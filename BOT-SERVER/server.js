@@ -473,7 +473,9 @@ function exigirLogin(req, res, next) {
 }
 
 const app = express();
-app.use(express.json());
+// limite padrão do Express é 100kb — as fotos dos produtos (em base64) somadas facilmente
+// passam disso, causando "PayloadTooLargeError" ao salvar no painel sem nenhum aviso claro
+app.use(express.json({ limit: '50mb' }));
 
 // ---------- catálogo público (SISTEMA) — sem login, é o site que qualquer cliente visita ----------
 // Fica antes do exigirLogin de propósito: o catálogo publicado precisa carregar sem senha.
