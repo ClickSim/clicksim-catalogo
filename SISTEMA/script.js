@@ -47,7 +47,8 @@ function normalizarImagem(p) {
 
 function resolverImagem(src) {
   if (!src) return "";
-  return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
+  if (src.startsWith("data:") || src.startsWith("http")) return src;
+  return PASTA_IMAGENS + src;
 }
 
 const API_PERFUMES = "https://167-99-150-99.sslip.io/api/perfumes";

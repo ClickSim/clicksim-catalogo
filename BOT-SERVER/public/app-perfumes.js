@@ -59,7 +59,8 @@ async function inicializarPainelPerfumes() {
 
   function resolverImagem(src) {
     if (!src) return "";
-    return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
+    if (src.startsWith("data:") || src.startsWith("http")) return src;
+    return PASTA_IMAGENS + src;
   }
 
   async function carregarPerfumes() {
@@ -255,6 +256,17 @@ async function inicializarPainelPerfumes() {
     });
   }
 
+  async function enviarFotoParaServidor(dataUrl) {
+    const resp = await fetch("/api/upload-imagem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl })
+    });
+    if (!resp.ok) throw new Error("upload falhou");
+    const { url } = await resp.json();
+    return url;
+  }
+
   async function adicionarFotos(arquivos) {
     const espacoLivre = MAX_FOTOS - fotosAtuais.length;
     if (espacoLivre <= 0) {
@@ -262,14 +274,19 @@ async function inicializarPainelPerfumes() {
       return;
     }
     const selecionados = Array.from(arquivos).slice(0, espacoLivre);
+    fFotos.disabled = true;
     for (const arquivo of selecionados) {
       try {
-        fotosAtuais.push(await lerArquivoComoDataURL(arquivo));
+        const dataUrl = await lerArquivoComoDataURL(arquivo);
+        const url = await enviarFotoParaServidor(dataUrl);
+        fotosAtuais.push(url);
+        renderizarPreviewFotos();
       } catch (erro) {
-        console.warn("Não foi possível ler a imagem:", erro);
+        console.warn("Não foi possível enviar a imagem:", erro);
+        alert("Não foi possível enviar uma das fotos. Tente de novo.");
       }
     }
-    renderizarPreviewFotos();
+    fFotos.disabled = false;
   }
 
   fFotos.addEventListener("change", (e) => {
