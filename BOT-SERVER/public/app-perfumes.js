@@ -9,6 +9,7 @@ async function inicializarPainelPerfumes() {
 
   const listaEl = document.getElementById("listaPerfumes");
   const totalEl = document.getElementById("totalProdutos");
+  const buscaProdutoEl = document.getElementById("buscaProduto");
   const form = document.getElementById("formPerfume");
   const tituloForm = document.getElementById("tituloForm");
   const btnSalvarProduto = document.getElementById("btnSalvarProduto");
@@ -92,6 +93,12 @@ async function inicializarPainelPerfumes() {
     return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
+  function correspondeABusca(p, termo) {
+    if (!termo) return true;
+    const alvo = `${p.nome} ${p.marca}`.toLowerCase();
+    return alvo.includes(termo.toLowerCase());
+  }
+
   function renderizarLista() {
     totalEl.textContent = perfumes.length;
 
@@ -100,9 +107,19 @@ async function inicializarPainelPerfumes() {
       return;
     }
 
-    listaEl.innerHTML = perfumes
+    const termoBusca = buscaProdutoEl ? buscaProdutoEl.value.trim() : "";
+    const itensFiltrados = perfumes
+      .map((p, indice) => ({ p, indice }))
+      .filter(({ p }) => correspondeABusca(p, termoBusca));
+
+    if (itensFiltrados.length === 0) {
+      listaEl.innerHTML = '<p class="vazio">Nenhum produto encontrado pra essa busca.</p>';
+      return;
+    }
+
+    listaEl.innerHTML = itensFiltrados
       .map(
-        (p, indice) => `
+        ({ p, indice }) => `
       <div class="item-perfume" draggable="true" data-indice="${indice}">
         <span class="item-arraste">☰</span>
         <div class="item-foto">
@@ -307,6 +324,10 @@ async function inicializarPainelPerfumes() {
       alert("Não foi possível salvar. Verifique sua conexão e tente de novo.");
     }
   });
+
+  if (buscaProdutoEl) {
+    buscaProdutoEl.addEventListener("input", () => renderizarLista());
+  }
 
   const btnAtualizarProdutos = document.getElementById("btnAtualizarProdutos");
   if (btnAtualizarProdutos) {
