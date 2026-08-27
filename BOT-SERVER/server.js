@@ -21,6 +21,8 @@ const ARQ_PEDIDOS = path.join(__dirname, 'data', 'pedidos.xlsx');
 const ARQ_PERFUMES = path.join(__dirname, 'data', 'perfumes.json');
 const PASTA_SISTEMA = path.join(__dirname, '..', 'SISTEMA');
 const PASTA_IMAGENS_CATALOGO = path.join(__dirname, '..', 'EDICAO', 'imagens');
+const PASTA_IMAGENS_UPLOAD = path.join(__dirname, 'data', 'imagens-produtos');
+fs.mkdirSync(PASTA_IMAGENS_UPLOAD, { recursive: true });
 const COLUNAS_PEDIDOS = ['Data', 'Número', 'Cliente', 'Produto', 'Preço', 'Pagamento', 'Entrega', 'Endereço/Horário'];
 
 const TIPOS_SISTEMA = ['Saudação', 'Saudação Fora do Horário', 'Ausência', 'Fallback', 'Fallback Fora do Horário'];
@@ -473,7 +475,9 @@ function exigirLogin(req, res, next) {
 }
 
 const app = express();
-app.use(express.json());
+// limite padrão do Express é 100kb — as fotos dos produtos (em base64) somadas facilmente
+// passam disso, causando "PayloadTooLargeError" ao salvar no painel sem nenhum aviso claro
+app.use(express.json({ limit: '50mb' }));
 
 // ---------- catálogo público (SISTEMA) — sem login, é o site que qualquer cliente visita ----------
 // Fica antes do exigirLogin de propósito: o catálogo publicado precisa carregar sem senha.
@@ -484,11 +488,33 @@ app.get('/api/perfumes', (req, res) => {
   res.set('Access-Control-Allow-Origin', '*');
   res.json(lerJSON(ARQ_PERFUMES, []));
 });
+app.get('/api/numero-whatsapp', (req, res) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  const config = lerJSON(ARQ_CONFIG, {});
+  res.json({ numeroWhatsapp: config.numeroWhatsapp || '' });
+});
 app.use('/SISTEMA', express.static(PASTA_SISTEMA));
 app.use('/EDICAO/imagens', express.static(PASTA_IMAGENS_CATALOGO));
+app.use('/imagens-produtos', (req, res, next) => {
+  res.set('Access-Control-Allow-Origin', '*');
+  next();
+}, express.static(PASTA_IMAGENS_UPLOAD));
 
 app.use(exigirLogin);
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Recebe uma foto em base64 (do painel) e salva como arquivo de verdade, em vez de deixar
+// embutida dentro de perfumes.json — evita que o arquivo de produtos fique gigante e lento
+// de salvar conforme o catálogo cresce (era a causa do PayloadTooLargeError de antes).
+app.post('/api/upload-imagem', (req, res) => {
+  const { dataUrl } = req.body;
+  const match = /^data:image\/(\w+);base64,(.+)$/.exec(dataUrl || '');
+  if (!match) return res.status(400).json({ erro: 'imagem inválida' });
+  const [, extensao, base64] = match;
+  const nomeArquivo = `foto-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extensao === 'jpeg' ? 'jpg' : extensao}`;
+  fs.writeFileSync(path.join(PASTA_IMAGENS_UPLOAD, nomeArquivo), Buffer.from(base64, 'base64'));
+  res.json({ arquivo: nomeArquivo, url: `https://167-99-150-99.sslip.io/imagens-produtos/${nomeArquivo}` });
+});
 
 app.post('/api/perfumes', (req, res) => {
   const lista = req.body;

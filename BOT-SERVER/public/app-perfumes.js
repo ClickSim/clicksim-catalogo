@@ -1,5 +1,5 @@
 const CHAVE_CONFIG = "clicksim_config";
-const PASTA_IMAGENS = "/EDICAO/imagens/";
+const PASTA_IMAGENS = "https://clicksim.github.io/clicksim-catalogo/EDICAO/imagens/";
 
 inicializarPainelPerfumes();
 
@@ -9,6 +9,7 @@ async function inicializarPainelPerfumes() {
 
   const listaEl = document.getElementById("listaPerfumes");
   const totalEl = document.getElementById("totalProdutos");
+  const buscaProdutoEl = document.getElementById("buscaProduto");
   const form = document.getElementById("formPerfume");
   const tituloForm = document.getElementById("tituloForm");
   const btnSalvarProduto = document.getElementById("btnSalvarProduto");
@@ -29,17 +30,17 @@ async function inicializarPainelPerfumes() {
 
   const fWhatsapp = document.getElementById("fWhatsapp");
 
-  function carregarNumeroWhatsapp() {
+  async function carregarNumeroWhatsapp() {
     try {
-      const salvo = localStorage.getItem(CHAVE_CONFIG);
-      if (salvo) {
-        const config = JSON.parse(salvo);
+      const resp = await fetch("/api/config");
+      if (resp.ok) {
+        const config = await resp.json();
         if (config && config.numeroWhatsapp) return config.numeroWhatsapp;
       }
     } catch (erro) {
-      console.warn("Não foi possível ler a configuração salva:", erro);
+      console.warn("Não foi possível carregar o número salvo:", erro);
     }
-    return typeof NUMERO_WHATSAPP !== "undefined" ? NUMERO_WHATSAPP : "";
+    return "";
   }
 
   function normalizarImagem(p) {
@@ -58,7 +59,8 @@ async function inicializarPainelPerfumes() {
 
   function resolverImagem(src) {
     if (!src) return "";
-    return src.startsWith("data:") ? src : PASTA_IMAGENS + src;
+    if (src.startsWith("data:") || src.startsWith("http")) return src;
+    return PASTA_IMAGENS + src;
   }
 
   async function carregarPerfumes() {
@@ -92,6 +94,12 @@ async function inicializarPainelPerfumes() {
     return Number(valor).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   }
 
+  function correspondeABusca(p, termo) {
+    if (!termo) return true;
+    const alvo = `${p.nome} ${p.marca}`.toLowerCase();
+    return alvo.includes(termo.toLowerCase());
+  }
+
   function renderizarLista() {
     totalEl.textContent = perfumes.length;
 
@@ -100,9 +108,19 @@ async function inicializarPainelPerfumes() {
       return;
     }
 
-    listaEl.innerHTML = perfumes
+    const termoBusca = buscaProdutoEl ? buscaProdutoEl.value.trim() : "";
+    const itensFiltrados = perfumes
+      .map((p, indice) => ({ p, indice }))
+      .filter(({ p }) => correspondeABusca(p, termoBusca));
+
+    if (itensFiltrados.length === 0) {
+      listaEl.innerHTML = '<p class="vazio">Nenhum produto encontrado pra essa busca.</p>';
+      return;
+    }
+
+    listaEl.innerHTML = itensFiltrados
       .map(
-        (p, indice) => `
+        ({ p, indice }) => `
       <div class="item-perfume" draggable="true" data-indice="${indice}">
         <span class="item-arraste">☰</span>
         <div class="item-foto">
@@ -238,6 +256,17 @@ async function inicializarPainelPerfumes() {
     });
   }
 
+  async function enviarFotoParaServidor(dataUrl) {
+    const resp = await fetch("/api/upload-imagem", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl })
+    });
+    if (!resp.ok) throw new Error("upload falhou");
+    const { url } = await resp.json();
+    return url;
+  }
+
   async function adicionarFotos(arquivos) {
     const espacoLivre = MAX_FOTOS - fotosAtuais.length;
     if (espacoLivre <= 0) {
@@ -245,14 +274,19 @@ async function inicializarPainelPerfumes() {
       return;
     }
     const selecionados = Array.from(arquivos).slice(0, espacoLivre);
+    fFotos.disabled = true;
     for (const arquivo of selecionados) {
       try {
-        fotosAtuais.push(await lerArquivoComoDataURL(arquivo));
+        const dataUrl = await lerArquivoComoDataURL(arquivo);
+        const url = await enviarFotoParaServidor(dataUrl);
+        fotosAtuais.push(url);
+        renderizarPreviewFotos();
       } catch (erro) {
-        console.warn("Não foi possível ler a imagem:", erro);
+        console.warn("Não foi possível enviar a imagem:", erro);
+        alert("Não foi possível enviar uma das fotos. Tente de novo.");
       }
     }
-    renderizarPreviewFotos();
+    fFotos.disabled = false;
   }
 
   fFotos.addEventListener("change", (e) => {
@@ -288,52 +322,7 @@ async function inicializarPainelPerfumes() {
 
   btnCancelarEdicao.addEventListener("click", limparFormulario);
 
-  function gerarTextoPerfumesJs(lista) {
-    const blocos = lista.map((p) => {
-      const campos = [
-        `    nome: ${JSON.stringify(p.nome)}`,
-        `    marca: ${JSON.stringify(p.marca)}`,
-        `    categoria: ${JSON.stringify(p.categoria)}`,
-        `    preco: ${p.preco === null || p.preco === undefined ? "null" : Number(p.preco)}`,
-        `    genero: ${JSON.stringify(p.genero)}`,
-      ];
-      if (p.maisVendido) campos.push(`    maisVendido: true`);
-      if (p.promocao) campos.push(`    promocao: true`);
-      campos.push(`    imagens: ${JSON.stringify(p.imagens || [])}`);
-      campos.push(`    descricao: ${JSON.stringify(p.descricao || "")}`);
-      return "  {\n" + campos.join(",\n") + "\n  }";
-    });
-
-    return (
-      `// Edite esta lista para adicionar, remover ou alterar produtos.\n` +
-      `// "imagens" é uma lista com até 5 fotos: nome de arquivo em EDICAO/imagens, ou foto embutida (data:...).\n` +
-      `// Se "preco" for null, o card mostra "Consulte o valor".\n` +
-      `const PERFUMES = [\n${blocos.join(",\n")}\n];\n`
-    );
-  }
-
-  document.getElementById("btnBaixar").addEventListener("click", () => {
-    const texto = gerarTextoPerfumesJs(perfumes);
-    const blob = new Blob([texto], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "perfumes.js";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
-
-  document.getElementById("btnRestaurar").addEventListener("click", () => {
-    if (!confirm("Isso apaga as alterações salvas no servidor e volta pro catálogo original do arquivo perfumes.js. Continuar?")) return;
-    perfumes = typeof PERFUMES !== "undefined" ? JSON.parse(JSON.stringify(PERFUMES)) : [];
-    salvar();
-    renderizarLista();
-    limparFormulario();
-  });
-
-  document.getElementById("btnSalvarWhatsapp").addEventListener("click", () => {
+  document.getElementById("btnSalvarWhatsapp").addEventListener("click", async () => {
     const numero = fWhatsapp.value.replace(/\D/g, "");
     if (!numero) {
       alert("Digite o número de WhatsApp (só números, com DDI+DDD).");
@@ -341,30 +330,35 @@ async function inicializarPainelPerfumes() {
     }
     fWhatsapp.value = numero;
     try {
-      localStorage.setItem(CHAVE_CONFIG, JSON.stringify({ numeroWhatsapp: numero }));
-      alert("Número salvo neste navegador. Clique em \"Baixar config.js atualizado\" e substitua o arquivo antes de publicar.");
+      await fetch("/api/config", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ numeroWhatsapp: numero })
+      });
+      alert("Número salvo! Já atualizou no catálogo.");
     } catch (erro) {
-      console.warn("Não foi possível salvar a configuração:", erro);
+      console.warn("Não foi possível salvar o número:", erro);
+      alert("Não foi possível salvar. Verifique sua conexão e tente de novo.");
     }
   });
 
-  document.getElementById("btnBaixarConfig").addEventListener("click", () => {
-    const numero = fWhatsapp.value.replace(/\D/g, "") || carregarNumeroWhatsapp();
-    const texto =
-      `// Número de WhatsApp da loja: DDI + DDD + número, só dígitos (ex: 5547988587295).\n` +
-      `const NUMERO_WHATSAPP = ${JSON.stringify(numero)};\n`;
-    const blob = new Blob([texto], { type: "text/javascript" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "config.js";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  });
+  if (buscaProdutoEl) {
+    buscaProdutoEl.addEventListener("input", () => renderizarLista());
+  }
 
-  fWhatsapp.value = carregarNumeroWhatsapp();
+  const btnAtualizarProdutos = document.getElementById("btnAtualizarProdutos");
+  if (btnAtualizarProdutos) {
+    btnAtualizarProdutos.addEventListener("click", async () => {
+      btnAtualizarProdutos.disabled = true;
+      btnAtualizarProdutos.textContent = "Atualizando...";
+      perfumes = await carregarPerfumes();
+      renderizarLista();
+      btnAtualizarProdutos.disabled = false;
+      btnAtualizarProdutos.textContent = "🔄 Atualizar produtos";
+    });
+  }
+
+  fWhatsapp.value = await carregarNumeroWhatsapp();
 
   limparFormulario();
   renderizarLista();
