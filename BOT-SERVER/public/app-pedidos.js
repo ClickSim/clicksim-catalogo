@@ -132,6 +132,74 @@ document.getElementById('btnAtualizarPedidos').addEventListener('click', carrega
 document.querySelector('[data-aba="aba-pedidos"]').addEventListener('click', carregarPedidos);
 carregarPedidos();
 
+// ---------- venda presencial (cadastro manual) ----------
+
+let perfumesCatalogoPedidos = [];
+
+async function carregarPerfumesParaVendaPresencial() {
+  try {
+    const resp = await fetch('/api/perfumes');
+    perfumesCatalogoPedidos = await resp.json();
+    const select = document.getElementById('vpProduto');
+    select.innerHTML = perfumesCatalogoPedidos
+      .map((p, i) => `<option value="${i}">${escaparHTML(p.marca)} - ${escaparHTML(p.nome)}</option>`)
+      .join('');
+    atualizarPrecoVendaPresencial();
+  } catch {
+    perfumesCatalogoPedidos = [];
+  }
+}
+
+function atualizarPrecoVendaPresencial() {
+  const perfume = perfumesCatalogoPedidos[Number(document.getElementById('vpProduto').value)];
+  document.getElementById('vpPreco').value = perfume && perfume.preco != null ? perfume.preco : '';
+}
+
+document.getElementById('btnAbrirVendaPresencial').addEventListener('click', async () => {
+  await carregarPerfumesParaVendaPresencial();
+  document.getElementById('formVendaPresencial').hidden = false;
+});
+
+document.getElementById('vpProduto').addEventListener('change', atualizarPrecoVendaPresencial);
+
+document.getElementById('btnCancelarVendaPresencial').addEventListener('click', () => {
+  document.getElementById('formVendaPresencial').hidden = true;
+  document.getElementById('vpCliente').value = '';
+});
+
+document.getElementById('btnSalvarVendaPresencial').addEventListener('click', async () => {
+  const perfume = perfumesCatalogoPedidos[Number(document.getElementById('vpProduto').value)];
+  const cliente = document.getElementById('vpCliente').value.trim();
+  if (!perfume || !cliente) {
+    alert('Escolha o produto e digite o nome do cliente.');
+    return;
+  }
+
+  const resp = await fetch('/api/pedidos/manual', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      cliente,
+      produto: `${perfume.marca} - ${perfume.nome}`,
+      preco: document.getElementById('vpPreco').value,
+      pagamento: document.getElementById('vpPagamento').value
+    })
+  });
+  if (!resp.ok) {
+    const erro = await resp.json().catch(() => ({}));
+    alert(erro.erro || 'Não foi possível salvar a venda.');
+    return;
+  }
+
+  document.getElementById('formVendaPresencial').hidden = true;
+  document.getElementById('vpCliente').value = '';
+
+  document.querySelectorAll('.btn-status').forEach((b) => b.classList.remove('ativa'));
+  document.querySelector('.btn-status[data-status="Confirmado"]').classList.add('ativa');
+  filtroStatusAtual = 'Confirmado';
+  await carregarPedidos();
+});
+
 document.querySelectorAll('.btn-status').forEach((btn) => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.btn-status').forEach((b) => b.classList.remove('ativa'));

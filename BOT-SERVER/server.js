@@ -261,7 +261,7 @@ function extrairDadosPedido(texto) {
   };
 }
 
-async function salvarPedidoPlanilha(numero, dados) {
+async function abrirPlanilhaPedidos() {
   const wb = new ExcelJS.Workbook();
   if (fs.existsSync(ARQ_PEDIDOS)) {
     await wb.xlsx.readFile(ARQ_PEDIDOS);
@@ -273,6 +273,11 @@ async function salvarPedidoPlanilha(numero, dados) {
     ws.getRow(1).font = { bold: true };
     ws.columns.forEach((col) => { col.width = 22; });
   }
+  return { wb, ws };
+}
+
+async function salvarPedidoPlanilha(numero, dados) {
+  const { wb, ws } = await abrirPlanilhaPedidos();
   ws.addRow([
     new Date().toLocaleString('pt-BR'),
     numero,
@@ -868,6 +873,26 @@ app.get('/api/pedidos', async (req, res) => {
     });
   });
   res.json(pedidos.reverse());
+});
+
+app.post('/api/pedidos/manual', async (req, res) => {
+  const { cliente, produto, preco, pagamento } = req.body;
+  if (!cliente || !produto) return res.status(400).json({ erro: 'Preencha cliente e produto' });
+
+  const { wb, ws } = await abrirPlanilhaPedidos();
+  ws.addRow([
+    new Date().toLocaleString('pt-BR'),
+    'Presencial',
+    cliente,
+    produto,
+    preco || '',
+    pagamento || '',
+    'Venda presencial',
+    '',
+    'Confirmado', pagamento || '', '', '', '', ''
+  ]);
+  await wb.xlsx.writeFile(ARQ_PEDIDOS);
+  res.json({ ok: true });
 });
 
 app.post('/api/pedidos/:linha/status', async (req, res) => {

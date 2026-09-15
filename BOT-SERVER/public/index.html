@@ -255,6 +255,42 @@
         <button type="button" class="btn-status" data-status="Cancelado">❌ Cancelados <span class="contagem">0</span></button>
       </nav>
 
+      <section class="card borda-secundaria">
+        <div class="titulo-card">
+          <span class="icone icone-verde">🏬</span>
+          <h2>Venda presencial</h2>
+        </div>
+        <p class="dica">Pra vendas feitas na loja, sem passar pelo WhatsApp. Entra direto como "Confirmado".</p>
+        <div>
+          <button type="button" id="btnAbrirVendaPresencial" class="btn btn-destaque">➕ Registrar venda presencial</button>
+        </div>
+        <div id="formVendaPresencial" hidden>
+          <label>Produto
+            <select id="vpProduto"></select>
+          </label>
+          <div class="form-linha">
+            <label>Cliente
+              <input type="text" id="vpCliente" placeholder="Nome do cliente">
+            </label>
+            <label>Preço (R$)
+              <input type="number" id="vpPreco" step="0.01">
+            </label>
+            <label>Forma de pagamento
+              <select id="vpPagamento">
+                <option value="Pix">Pix</option>
+                <option value="Dinheiro">Dinheiro</option>
+                <option value="Cartão de Débito">Cartão de Débito</option>
+                <option value="Cartão de Crédito">Cartão de Crédito</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <button type="button" id="btnSalvarVendaPresencial" class="btn btn-destaque">💾 Salvar venda</button>
+            <button type="button" id="btnCancelarVendaPresencial" class="btn btn-secundario">Cancelar</button>
+          </div>
+        </div>
+      </section>
+
       <section class="card borda-destaque">
         <div class="titulo-card">
           <span class="icone icone-destaque">📦</span>
