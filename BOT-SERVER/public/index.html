@@ -18,6 +18,8 @@
       <button type="button" class="btn-aba ativa" data-aba="aba-pedidos">📦 Solicitação de Pedidos</button>
       <button type="button" class="btn-aba" data-aba="aba-bot">🤖 Atendente (Bot)</button>
       <button type="button" class="btn-aba" data-aba="aba-perfumes">🧴 Cadastro de Perfumes</button>
+      <button type="button" class="btn-aba" data-aba="aba-notas">🧾 Notas Fiscais</button>
+      <button type="button" class="btn-aba" data-aba="aba-financeiro">💰 Financeiro</button>
     </nav>
   </aside>
 
@@ -264,6 +266,92 @@
         <div id="listaPedidos" class="lista-pedidos"></div>
       </section>
     </div>
+
+    <div id="aba-notas" class="conteudo-aba">
+      <section class="card borda-destaque">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">🧾</span>
+          <h2>Importar nota fiscal</h2>
+        </div>
+        <p class="dica">Envie a nota em PDF, Excel ou XML (NF-e). O XML é lido direto pelo formato oficial; PDF e Excel usam IA pra extrair os dados — sempre revise antes de salvar.</p>
+        <label for="notaArquivo">Arquivo da nota
+          <input type="file" id="notaArquivo" accept=".pdf,.xlsx,.xls,.xml">
+        </label>
+        <div>
+          <button type="button" id="btnExtrairNota" class="btn btn-destaque">🔍 Extrair dados</button>
+        </div>
+        <p id="notaExtraindoAviso" class="dica" hidden>Lendo a nota, aguarde...</p>
+        <p id="notaErro" class="vazio" hidden></p>
+      </section>
+
+      <section id="secaoRevisaoNota" class="card borda-secundaria" hidden>
+        <div class="titulo-card">
+          <span class="icone icone-verde">✅</span>
+          <h2>Confira antes de salvar</h2>
+        </div>
+        <div class="form-linha">
+          <label>Fornecedor
+            <input type="text" id="notaFornecedor">
+          </label>
+          <label>Data
+            <input type="date" id="notaData">
+          </label>
+          <label>Valor total da nota
+            <input type="number" id="notaValorTotal" step="0.01">
+          </label>
+        </div>
+        <p class="dica">Pra cada item, vincule a um perfume do catálogo pra atualizar o custo dele automaticamente.</p>
+        <div id="notaItens"></div>
+        <div>
+          <button type="button" id="btnSalvarNota" class="btn btn-destaque">💾 Salvar nota e atualizar custos</button>
+          <button type="button" id="btnCancelarNota" class="btn btn-secundario">Cancelar</button>
+        </div>
+      </section>
+
+      <section class="card borda-secundaria">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">📋</span>
+          <h2>Notas importadas</h2>
+        </div>
+        <div id="listaNotas" class="lista-notas"></div>
+      </section>
+    </div>
+
+    <div id="aba-financeiro" class="conteudo-aba">
+      <section class="card borda-destaque">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">💰</span>
+          <h2>Resumo financeiro</h2>
+        </div>
+        <div class="form-linha">
+          <label>De
+            <input type="date" id="finInicio">
+          </label>
+          <label>Até
+            <input type="date" id="finFim">
+          </label>
+        </div>
+        <div>
+          <button type="button" id="btnAtualizarFinanceiro" class="btn btn-destaque">🔄 Atualizar</button>
+        </div>
+        <div class="cartoes-financeiro">
+          <div class="cartao-financeiro receita">
+            <span class="rotulo-financeiro">Receita</span>
+            <span class="valor-financeiro" id="finReceita">R$ 0,00</span>
+            <span class="dica-inline" id="finNumPedidos">0 pedidos</span>
+          </div>
+          <div class="cartao-financeiro custo">
+            <span class="rotulo-financeiro">Custos</span>
+            <span class="valor-financeiro" id="finCustos">R$ 0,00</span>
+            <span class="dica-inline" id="finNumNotas">0 notas</span>
+          </div>
+          <div class="cartao-financeiro lucro">
+            <span class="rotulo-financeiro">Lucro</span>
+            <span class="valor-financeiro" id="finLucro">R$ 0,00</span>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
 </div>
 
@@ -272,3 +360,5 @@
 <script src="catalogo/perfumes.js"></script>
 <script src="app-perfumes.js"></script>
 <script src="app-pedidos.js"></script>
+<script src="app-notas.js"></script>
+<script src="app-financeiro.js"></script>

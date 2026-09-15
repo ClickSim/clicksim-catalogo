@@ -531,3 +531,52 @@ textarea, input[type="text"], input[type="number"], input:not([type]), select {
 .item-preco { font-size: 14px; font-weight: 700; white-space: nowrap; }
 .item-botoes { display: flex; gap: 6px; flex-shrink: 0; }
 .item-botoes .btn { margin: 0; padding: 6px 10px; font-size: 12px; }
+
+/* ---- Aba Notas Fiscais ---- */
+
+.lista-notas { display: flex; flex-direction: column; gap: 10px; }
+.nota-item {
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 13px;
+}
+.nota-item .nota-topo { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.nota-item .nota-fornecedor { font-weight: 700; }
+.nota-item .nota-data { color: var(--texto-suave); }
+.nota-item .nota-valor { font-weight: 700; color: var(--cor-destaque-escuro); }
+.nota-item .nota-itens-resumo { color: var(--texto-suave); margin-top: 4px; }
+
+.item-nota-revisao {
+  border: 1px solid var(--borda);
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 8px;
+}
+.item-nota-revisao .form-linha { grid-template-columns: 2fr 1fr 1fr 1fr; margin-bottom: 8px; }
+.item-nota-revisao select { width: 100%; padding: 8px; border: 1px solid var(--borda); border-radius: 6px; }
+.item-nota-revisao label { font-size: 12px; }
+
+/* ---- Aba Financeiro ---- */
+
+.cartoes-financeiro {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 16px;
+}
+@media (max-width: 700px) {
+  .cartoes-financeiro { grid-template-columns: 1fr; }
+}
+.cartao-financeiro {
+  border-radius: 10px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cartao-financeiro .rotulo-financeiro { font-size: 13px; font-weight: 700; opacity: 0.8; }
+.cartao-financeiro .valor-financeiro { font-size: 24px; font-weight: 800; }
+.cartao-financeiro.receita { background: #dcf5ea; color: #0d6b48; }
+.cartao-financeiro.custo { background: #fbdcdc; color: #8f1420; }
+.cartao-financeiro.lucro { background: var(--destaque-off); color: var(--cor-destaque-escuro); }

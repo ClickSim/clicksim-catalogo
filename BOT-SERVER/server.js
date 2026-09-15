@@ -4,6 +4,8 @@ const path = require('path');
 const QRCode = require('qrcode');
 const pino = require('pino');
 const ExcelJS = require('exceljs');
+const Anthropic = require('@anthropic-ai/sdk');
+const { XMLParser } = require('fast-xml-parser');
 const {
   default: makeWASocket,
   useMultiFileAuthState,
@@ -19,6 +21,7 @@ const ARQ_CONVERSAS = path.join(__dirname, 'data', 'conversas.json');
 const ARQ_ESTADO = path.join(__dirname, 'data', 'estado.json');
 const ARQ_PEDIDOS = path.join(__dirname, 'data', 'pedidos.xlsx');
 const ARQ_PERFUMES = path.join(__dirname, 'data', 'perfumes.json');
+const ARQ_NOTAS = path.join(__dirname, 'data', 'notas-fiscais.json');
 const PASTA_SISTEMA = path.join(__dirname, '..', 'SISTEMA');
 const PASTA_IMAGENS_CATALOGO = path.join(__dirname, '..', 'EDICAO', 'imagens');
 const PASTA_IMAGENS_UPLOAD = path.join(__dirname, 'data', 'imagens-produtos');
@@ -345,6 +348,156 @@ async function verificarLembretesAPrazo() {
   }
 
   if (alterou) await wb.xlsx.writeFile(ARQ_PEDIDOS);
+}
+
+// ---------- notas fiscais (importação PDF/Excel/XML) ----------
+
+let clienteIA = null;
+function obterClienteIA() {
+  if (!process.env.ANTHROPIC_API_KEY) return null;
+  if (!clienteIA) clienteIA = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  return clienteIA;
+}
+
+// lê uma NF-e (XML padrão da Receita/Sefaz) direto na estrutura, sem precisar de IA
+function parsearNotaXML(xmlTexto) {
+  const parser = new XMLParser({ ignoreAttributes: false, isArray: (nome) => nome === 'det' });
+  const doc = parser.parse(xmlTexto);
+  const infNFe = doc?.nfeProc?.NFe?.infNFe || doc?.NFe?.infNFe;
+  if (!infNFe) throw new Error('Esse XML não parece ser uma NF-e válida (tag infNFe não encontrada).');
+
+  const fornecedor = infNFe.emit?.xNome || '';
+  const dataEmissao = String(infNFe.ide?.dhEmi || infNFe.ide?.dEmi || '').slice(0, 10);
+  const valorTotal = Number(infNFe.total?.ICMSTot?.vNF || 0);
+  const itens = (infNFe.det || []).map((item) => {
+    const prod = item.prod || {};
+    return {
+      descricao: prod.xProd || '',
+      quantidade: Number(prod.qCom || 1),
+      valorUnitario: Number(prod.vUnCom || 0),
+      valorTotal: Number(prod.vProd || 0)
+    };
+  });
+  return { fornecedor, data: dataEmissao, valorTotal, itens };
+}
+
+// planilhas de nota não têm formato fixo — converte em texto simples (linha por linha) pra IA ler
+async function excelParaTexto(buffer) {
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+  let texto = '';
+  wb.eachSheet((ws) => {
+    texto += `\n--- Planilha: ${ws.name} ---\n`;
+    ws.eachRow((row) => {
+      texto += row.values.slice(1).map((v) => (v == null ? '' : String(v))).join(' | ') + '\n';
+    });
+  });
+  return texto;
+}
+
+const FERRAMENTA_EXTRAIR_NOTA = {
+  name: 'registrar_nota',
+  description: 'Registra os dados extraídos da nota fiscal/comprovante de compra.',
+  input_schema: {
+    type: 'object',
+    properties: {
+      fornecedor: { type: 'string', description: 'Nome do fornecedor/emitente da nota' },
+      data: { type: 'string', description: 'Data de emissão da nota, formato YYYY-MM-DD' },
+      valorTotal: { type: 'number', description: 'Valor total da nota' },
+      itens: {
+        type: 'array',
+        description: 'Cada produto/linha comprado na nota',
+        items: {
+          type: 'object',
+          properties: {
+            descricao: { type: 'string' },
+            quantidade: { type: 'number' },
+            valorUnitario: { type: 'number' },
+            valorTotal: { type: 'number' }
+          },
+          required: ['descricao', 'valorTotal']
+        }
+      }
+    },
+    required: ['fornecedor', 'valorTotal', 'itens']
+  }
+};
+
+// pdfBase64 (nota em PDF) OU texto (nota em Excel, já convertida) — nunca os dois juntos
+async function extrairNotaComIA({ pdfBase64, texto }) {
+  const client = obterClienteIA();
+  if (!client) throw new Error('Extração automática exige a chave ANTHROPIC_API_KEY configurada no servidor.');
+
+  const conteudo = pdfBase64
+    ? [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+        { type: 'text', text: 'Extraia os dados dessa nota fiscal/comprovante de compra.' }
+      ]
+    : [{ type: 'text', text: `Extraia os dados da nota fiscal a partir dessa planilha (convertida em texto):\n\n${texto}` }];
+
+  const resposta = await client.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 2000,
+    messages: [{ role: 'user', content: conteudo }],
+    tools: [FERRAMENTA_EXTRAIR_NOTA],
+    tool_choice: { type: 'tool', name: 'registrar_nota' }
+  });
+
+  const blocoFerramenta = resposta.content.find((b) => b.type === 'tool_use');
+  if (!blocoFerramenta) throw new Error('A IA não conseguiu extrair os dados dessa nota.');
+  return blocoFerramenta.input;
+}
+
+// ---------- financeiro (receita de pedidos x custos de notas) ----------
+
+function parsePrecoBR(valor) {
+  if (typeof valor === 'number') return valor;
+  if (!valor) return 0;
+  let limpo = String(valor).replace(/[^\d,.-]/g, '');
+  if (limpo.includes(',')) limpo = limpo.replace(/\./g, '').replace(',', '.');
+  return parseFloat(limpo) || 0;
+}
+
+// pedidos.xlsx guarda a data como "DD/MM/AAAA, HH:MM:SS" (toLocaleString('pt-BR'))
+function parseDataPedido(texto) {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(texto || '');
+  return m ? `${m[3]}-${m[2]}-${m[1]}` : null;
+}
+
+async function calcularFinanceiro(inicio, fim) {
+  let receita = 0;
+  let numPedidos = 0;
+
+  if (fs.existsSync(ARQ_PEDIDOS)) {
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.readFile(ARQ_PEDIDOS);
+    const ws = wb.getWorksheet('Pedidos');
+    if (ws) {
+      ws.eachRow((row, numeroLinha) => {
+        if (numeroLinha === 1) return;
+        if (!row.getCell(1).value) return;
+        const status = row.getCell(9).value || 'Pendente';
+        if (status !== 'Confirmado' && status !== 'A Prazo') return;
+        const dataPedido = parseDataPedido(row.getCell(1).value);
+        if (inicio && (!dataPedido || dataPedido < inicio)) return;
+        if (fim && (!dataPedido || dataPedido > fim)) return;
+        receita += parsePrecoBR(row.getCell(5).value);
+        numPedidos++;
+      });
+    }
+  }
+
+  const notas = lerJSON(ARQ_NOTAS, []);
+  let custos = 0;
+  let numNotas = 0;
+  for (const nota of notas) {
+    if (inicio && (!nota.data || nota.data < inicio)) continue;
+    if (fim && (!nota.data || nota.data > fim)) continue;
+    custos += Number(nota.valorTotal) || 0;
+    numNotas++;
+  }
+
+  return { receita, custos, lucro: receita - custos, numPedidos, numNotas };
 }
 
 // ---------- WhatsApp ----------
@@ -765,6 +918,80 @@ app.post('/api/pedidos/:linha/comprovante', async (req, res) => {
   row.commit();
   await wb.xlsx.writeFile(ARQ_PEDIDOS);
   res.json({ ok: true });
+});
+
+app.post('/api/notas/extrair', async (req, res) => {
+  const { tipo, dataBase64 } = req.body;
+  try {
+    let extraido;
+    if (tipo === 'xml') {
+      extraido = parsearNotaXML(Buffer.from(dataBase64, 'base64').toString('utf-8'));
+    } else if (tipo === 'excel') {
+      const texto = await excelParaTexto(Buffer.from(dataBase64, 'base64'));
+      extraido = await extrairNotaComIA({ texto });
+    } else if (tipo === 'pdf') {
+      extraido = await extrairNotaComIA({ pdfBase64: dataBase64 });
+    } else {
+      return res.status(400).json({ erro: 'Tipo de arquivo não suportado. Use PDF, Excel ou XML.' });
+    }
+    res.json(extraido);
+  } catch (erro) {
+    console.error('Erro ao extrair nota fiscal:', erro.message);
+    res.status(400).json({ erro: erro.message });
+  }
+});
+
+app.get('/api/notas', (req, res) => {
+  res.json(lerJSON(ARQ_NOTAS, []));
+});
+
+app.post('/api/notas', (req, res) => {
+  const { fornecedor, data, valorTotal, nomeArquivoOriginal, itens } = req.body;
+  if (!fornecedor || !Array.isArray(itens)) return res.status(400).json({ erro: 'Dados incompletos' });
+
+  const notas = lerJSON(ARQ_NOTAS, []);
+  const nota = {
+    id: Date.now().toString(),
+    criadoEm: new Date().toISOString(),
+    fornecedor,
+    data: data || '',
+    valorTotal: Number(valorTotal) || 0,
+    nomeArquivoOriginal: nomeArquivoOriginal || '',
+    itens
+  };
+  notas.unshift(nota);
+  salvarJSON(ARQ_NOTAS, notas);
+
+  // atualiza o custo dos perfumes vinculados (por nome+marca — o catálogo não tem id estável)
+  const perfumes = lerJSON(ARQ_PERFUMES, []);
+  let alterouPerfumes = false;
+  for (const item of itens) {
+    if (!item.perfumeNome) continue;
+    const p = perfumes.find((x) => x.nome === item.perfumeNome && x.marca === item.perfumeMarca);
+    if (p) {
+      p.custoUnitario = Number(item.valorUnitario) || p.custoUnitario || 0;
+      alterouPerfumes = true;
+    }
+  }
+  if (alterouPerfumes) salvarJSON(ARQ_PERFUMES, perfumes);
+
+  res.json({ ok: true, id: nota.id });
+});
+
+app.delete('/api/notas/:id', (req, res) => {
+  const notas = lerJSON(ARQ_NOTAS, []);
+  const filtradas = notas.filter((n) => n.id !== req.params.id);
+  salvarJSON(ARQ_NOTAS, filtradas);
+  res.json({ ok: true });
+});
+
+app.get('/api/financeiro', async (req, res) => {
+  try {
+    const { inicio, fim } = req.query;
+    res.json(await calcularFinanceiro(inicio, fim));
+  } catch (erro) {
+    res.status(500).json({ erro: erro.message });
+  }
 });
 
 app.post('/api/reconectar', async (req, res) => {

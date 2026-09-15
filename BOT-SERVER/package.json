@@ -7,9 +7,11 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
     "@whiskeysockets/baileys": "^7.0.0-rc13",
     "exceljs": "^4.4.0",
     "express": "^4.19.2",
+    "fast-xml-parser": "^4.5.7",
     "pino": "^9.2.0",
     "qrcode": "^1.5.3"
   }
