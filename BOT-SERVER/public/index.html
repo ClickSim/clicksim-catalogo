@@ -5,21 +5,24 @@
 <link rel="stylesheet" href="style.css" />
 
 <div class="app">
-  <header class="topo-painel">
-    <img id="logo" src="logo.png" alt="Click Sim Perfumaria" onerror="this.style.display='none'" />
-    <div>
-      <h1>Click Sim</h1>
-      <p class="subtitulo">Painel administrativo</p>
+  <aside class="barra-lateral">
+    <div class="topo-painel">
+      <img id="logo" src="logo.png" alt="Click Sim Perfumaria" onerror="this.style.display='none'" />
+      <div>
+        <h1>Click Sim</h1>
+        <p class="subtitulo">Painel administrativo</p>
+      </div>
     </div>
-  </header>
 
-  <nav class="abas-painel">
-    <button type="button" class="btn-aba ativa" data-aba="aba-bot">🤖 Atendente (Bot)</button>
-    <button type="button" class="btn-aba" data-aba="aba-perfumes">🧴 Cadastro de Perfumes</button>
-  </nav>
+    <nav class="abas-painel">
+      <button type="button" class="btn-aba ativa" data-aba="aba-pedidos">📦 Solicitação de Pedidos</button>
+      <button type="button" class="btn-aba" data-aba="aba-bot">🤖 Atendente (Bot)</button>
+      <button type="button" class="btn-aba" data-aba="aba-perfumes">🧴 Cadastro de Perfumes</button>
+    </nav>
+  </aside>
 
   <main>
-    <div id="aba-bot" class="conteudo-aba ativa">
+    <div id="aba-bot" class="conteudo-aba">
       <div class="grid">
         <div class="coluna">
           <section class="card borda-destaque">
@@ -70,6 +73,10 @@
             <label>Link do catálogo
               <span class="dica-inline">Usado no lugar de [LINK DO CATÁLOGO QUANDO PUBLICAR] nas mensagens</span>
               <input id="cfg-link-catalogo" placeholder="https://..." />
+            </label>
+            <label>Chave Pix
+              <span class="dica-inline">Usada nos lembretes automáticos de pedidos "A Prazo" (véspera e dia do vencimento)</span>
+              <input id="cfg-chave-pix" placeholder="Ex: 47988587295 ou e-mail/CPF" />
             </label>
             <label>Horário de atendimento
               <span class="dica-inline">Fora desse horário, o bot usa a mensagem de "Ausência" / "Saudação Fora do Horário" em vez da "Saudação" normal.</span>
@@ -236,6 +243,27 @@
         <div id="listaPerfumes" class="lista-perfumes"></div>
       </section>
     </div>
+
+    <div id="aba-pedidos" class="conteudo-aba ativa">
+      <nav class="submenu-status">
+        <button type="button" class="btn-status ativa" data-status="Pendente">🕓 Pendentes <span class="contagem">0</span></button>
+        <button type="button" class="btn-status" data-status="Confirmado">✅ Confirmados <span class="contagem">0</span></button>
+        <button type="button" class="btn-status" data-status="A Prazo">📝 A Prazo <span class="contagem">0</span></button>
+        <button type="button" class="btn-status" data-status="Cancelado">❌ Cancelados <span class="contagem">0</span></button>
+      </nav>
+
+      <section class="card borda-destaque">
+        <div class="titulo-card">
+          <span class="icone icone-destaque">📦</span>
+          <h2 id="tituloListaPedidos">Pedidos pendentes</h2>
+        </div>
+        <p class="dica">Registrados automaticamente quando o cliente manda o pedido pelo WhatsApp após clicar em "Enviar pedido" no catálogo.</p>
+        <div>
+          <button id="btnAtualizarPedidos" class="btn btn-destaque">🔄 Atualizar pedidos</button>
+        </div>
+        <div id="listaPedidos" class="lista-pedidos"></div>
+      </section>
+    </div>
   </main>
 </div>
 
@@ -243,3 +271,4 @@
 <script src="app.js"></script>
 <script src="catalogo/perfumes.js"></script>
 <script src="app-perfumes.js"></script>
+<script src="app-pedidos.js"></script>

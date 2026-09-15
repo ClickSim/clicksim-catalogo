@@ -33,6 +33,7 @@ async function carregarConfig() {
   const cfg = await r.json();
   document.getElementById('cfg-nome-atendente').value = cfg.nomeAtendente || '';
   document.getElementById('cfg-link-catalogo').value = cfg.linkCatalogo || '';
+  document.getElementById('cfg-chave-pix').value = cfg.chavePix || '';
   document.getElementById('cfg-horario-abertura').value = cfg.horarioAbertura || '';
   document.getElementById('cfg-horario-fechamento').value = cfg.horarioFechamento || '';
   document.getElementById('cfg-ativo').checked = !!cfg.respostaAutomaticaAtiva;
@@ -57,6 +58,7 @@ document.getElementById('btn-salvar-config').addEventListener('click', async () 
     body: JSON.stringify({
       nomeAtendente: document.getElementById('cfg-nome-atendente').value,
       linkCatalogo: document.getElementById('cfg-link-catalogo').value,
+      chavePix: document.getElementById('cfg-chave-pix').value,
       horarioAbertura: document.getElementById('cfg-horario-abertura').value,
       horarioFechamento: document.getElementById('cfg-horario-fechamento').value,
       respostaAutomaticaAtiva: document.getElementById('cfg-ativo').checked,

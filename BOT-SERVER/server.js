@@ -23,7 +23,12 @@ const PASTA_SISTEMA = path.join(__dirname, '..', 'SISTEMA');
 const PASTA_IMAGENS_CATALOGO = path.join(__dirname, '..', 'EDICAO', 'imagens');
 const PASTA_IMAGENS_UPLOAD = path.join(__dirname, 'data', 'imagens-produtos');
 fs.mkdirSync(PASTA_IMAGENS_UPLOAD, { recursive: true });
-const COLUNAS_PEDIDOS = ['Data', 'Número', 'Cliente', 'Produto', 'Preço', 'Pagamento', 'Entrega', 'Endereço/Horário'];
+const COLUNAS_PEDIDOS = [
+  'Data', 'Número', 'Cliente', 'Produto', 'Preço', 'Pagamento', 'Entrega', 'Endereço/Horário',
+  'Status', 'Forma de Pagamento Confirmada', 'Data de Vencimento', 'Comprovante Recebido',
+  'Lembrete Véspera Enviado', 'Lembrete Dia Enviado'
+];
+const STATUS_PEDIDO_VALIDOS = ['Pendente', 'Confirmado', 'Cancelado', 'A Prazo'];
 
 const TIPOS_SISTEMA = ['Saudação', 'Saudação Fora do Horário', 'Ausência', 'Fallback', 'Fallback Fora do Horário'];
 
@@ -273,9 +278,73 @@ async function salvarPedidoPlanilha(numero, dados) {
     dados.preco,
     dados.pagamento,
     dados.entrega,
-    dados.enderecoOuHorario
+    dados.enderecoOuHorario,
+    'Pendente', '', '', '', '', ''
   ]);
   await wb.xlsx.writeFile(ARQ_PEDIDOS);
+}
+
+// soma/subtrai dias de uma data 'YYYY-MM-DD' sem depender do fuso do servidor
+function somarDias(dataISO, dias) {
+  const [ano, mes, dia] = dataISO.split('-').map(Number);
+  const d = new Date(Date.UTC(ano, mes - 1, dia));
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+// ---------- lembretes de pedidos "A Prazo" (véspera + dia do vencimento) ----------
+async function verificarLembretesAPrazo() {
+  if (!sock || statusConexao !== 'conectado') return;
+  if (!fs.existsSync(ARQ_PEDIDOS)) return;
+
+  const config = lerJSON(ARQ_CONFIG, {});
+  if (!config.chavePix) return; // sem chave Pix configurada, não dá pra montar o lembrete
+  if (!estaDentroDoHorario(config)) return;
+
+  const hoje = dataDeHoje();
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(ARQ_PEDIDOS);
+  const ws = wb.getWorksheet('Pedidos');
+  if (!ws) return;
+
+  let alterou = false;
+
+  for (let i = 2; i <= ws.rowCount; i++) {
+    const row = ws.getRow(i);
+    if (!row.getCell(1).value) continue;
+    if (row.getCell(9).value !== 'A Prazo') continue;
+
+    const vencimento = row.getCell(11).value;
+    if (!vencimento) continue;
+    const comprovanteRecebido = row.getCell(12).value === 'Sim';
+    if (comprovanteRecebido) continue;
+
+    const numero = row.getCell(2).value;
+    const produto = row.getCell(4).value || 'seu pedido';
+    const preco = row.getCell(5).value;
+    const jid = `${numero}@s.whatsapp.net`;
+    const detalhe = `${produto}${preco ? ' — R$ ' + preco : ''}`;
+
+    try {
+      if (vencimento === hoje && row.getCell(14).value !== 'Sim') {
+        await sock.sendMessage(jid, {
+          text: `Oi! Passando pra lembrar que o pagamento do seu pedido (${detalhe}) vence hoje. Chave Pix: ${config.chavePix}. Assim que pagar, manda o comprovante aqui pra gente confirmar 🙂`
+        });
+        row.getCell(14).value = 'Sim';
+        alterou = true;
+      } else if (somarDias(vencimento, -1) === hoje && row.getCell(13).value !== 'Sim') {
+        await sock.sendMessage(jid, {
+          text: `Oi! Só lembrando que o pagamento do seu pedido (${detalhe}) vence amanhã. Chave Pix: ${config.chavePix}.`
+        });
+        row.getCell(13).value = 'Sim';
+        alterou = true;
+      }
+    } catch (erro) {
+      console.error(`Não foi possível enviar lembrete de pedido a prazo pro número ${numero}:`, erro.message);
+    }
+  }
+
+  if (alterou) await wb.xlsx.writeFile(ARQ_PEDIDOS);
 }
 
 // ---------- WhatsApp ----------
@@ -618,6 +687,86 @@ app.get('/api/conversas', (req, res) => {
   res.json(lerJSON(ARQ_CONVERSAS, []));
 });
 
+app.get('/api/pedidos', async (req, res) => {
+  if (!fs.existsSync(ARQ_PEDIDOS)) return res.json([]);
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(ARQ_PEDIDOS);
+  const ws = wb.getWorksheet('Pedidos');
+  if (!ws) return res.json([]);
+  const pedidos = [];
+  ws.eachRow((row, numeroLinha) => {
+    if (numeroLinha === 1) return; // cabeçalho
+    if (!row.getCell(1).value) return; // linha vazia
+    const valores = row.values.slice(1); // ExcelJS usa índice 1-based e deixa [0] vazio
+    pedidos.push({
+      linha: numeroLinha,
+      data: valores[0] || '',
+      numero: valores[1] || '',
+      cliente: valores[2] || '',
+      produto: valores[3] || '',
+      preco: valores[4] || '',
+      pagamento: valores[5] || '',
+      entrega: valores[6] || '',
+      enderecoOuHorario: valores[7] || '',
+      status: valores[8] || 'Pendente',
+      formaPagamentoConfirmada: valores[9] || '',
+      dataVencimento: valores[10] || '',
+      comprovanteRecebido: valores[11] || ''
+    });
+  });
+  res.json(pedidos.reverse());
+});
+
+app.post('/api/pedidos/:linha/status', async (req, res) => {
+  const linha = Number(req.params.linha);
+  const { status, formaPagamento, dataVencimento } = req.body;
+  if (!Number.isInteger(linha) || linha < 2) return res.status(400).json({ erro: 'Linha inválida' });
+  if (!STATUS_PEDIDO_VALIDOS.includes(status)) return res.status(400).json({ erro: 'Status inválido' });
+  if (status === 'A Prazo' && !dataVencimento) return res.status(400).json({ erro: 'Informe a data de vencimento' });
+  if (!fs.existsSync(ARQ_PEDIDOS)) return res.status(404).json({ erro: 'Nenhum pedido registrado ainda' });
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(ARQ_PEDIDOS);
+  const ws = wb.getWorksheet('Pedidos');
+  const row = ws && ws.getRow(linha);
+  if (!row || !row.getCell(1).value) return res.status(404).json({ erro: 'Pedido não encontrado' });
+
+  row.getCell(9).value = status;
+  row.getCell(10).value = formaPagamento || '';
+  if (status === 'A Prazo') {
+    row.getCell(11).value = dataVencimento;
+    row.getCell(12).value = 'Não';
+    row.getCell(13).value = '';
+    row.getCell(14).value = '';
+  } else if (status === 'Pendente') {
+    // "reabrir": limpa os campos de confirmação/vencimento/lembrete
+    row.getCell(11).value = '';
+    row.getCell(12).value = '';
+    row.getCell(13).value = '';
+    row.getCell(14).value = '';
+  }
+  row.commit();
+  await wb.xlsx.writeFile(ARQ_PEDIDOS);
+  res.json({ ok: true });
+});
+
+app.post('/api/pedidos/:linha/comprovante', async (req, res) => {
+  const linha = Number(req.params.linha);
+  if (!Number.isInteger(linha) || linha < 2) return res.status(400).json({ erro: 'Linha inválida' });
+  if (!fs.existsSync(ARQ_PEDIDOS)) return res.status(404).json({ erro: 'Nenhum pedido registrado ainda' });
+
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.readFile(ARQ_PEDIDOS);
+  const ws = wb.getWorksheet('Pedidos');
+  const row = ws && ws.getRow(linha);
+  if (!row || !row.getCell(1).value) return res.status(404).json({ erro: 'Pedido não encontrado' });
+
+  row.getCell(12).value = 'Sim';
+  row.commit();
+  await wb.xlsx.writeFile(ARQ_PEDIDOS);
+  res.json({ ok: true });
+});
+
 app.post('/api/reconectar', async (req, res) => {
   try {
     if (sock) sock.end();
@@ -644,6 +793,10 @@ if (require.main === module) {
   });
 
   iniciarWhatsApp();
+
+  setInterval(() => {
+    verificarLembretesAPrazo().catch((erro) => console.error('Erro ao verificar lembretes de pedidos a prazo:', erro.message));
+  }, 60 * 60 * 1000);
 } else {
   // exportado só pra permitir testar as funções puras isoladamente (ver test-logica.js)
   module.exports = { buscarRespostaRapida, substituirPlaceholders, nomeValido, estaDentroDoHorario, normalizar, extrairDadosPedido, salvarPedidoPlanilha };
