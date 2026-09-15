@@ -12,6 +12,16 @@ function classeStatus(status) {
   return status.replace(/\s+/g, '');
 }
 
+const OPCOES_PAGAMENTO = ['Pix', 'Dinheiro', 'Cartão de Débito', 'Cartão de Crédito'];
+
+// pedidos antigos já guardam o preço como "R$ 189,98" (texto cru vindo do WhatsApp);
+// pedidos novos guardam só o número — não duplicar o prefixo nos dois casos
+function formatarPreco(preco) {
+  if (!preco) return '';
+  const texto = String(preco).trim();
+  return /^r\$/i.test(texto) ? texto : `R$ ${texto}`;
+}
+
 async function carregarPedidos() {
   const resp = await fetch('/api/pedidos');
   pedidosCache = await resp.json();
@@ -65,6 +75,17 @@ function renderizarPedidos() {
         <button type="button" class="btn-pequeno confirmar" data-linha="${p.linha}" data-forma="Pix">💰 Pagamento recebido</button>
         <button type="button" class="btn-pequeno reabrir" data-linha="${p.linha}">↩️ Reabrir</button>
       `;
+    } else if (p.status === 'Confirmado') {
+      acoes = `
+        <button type="button" class="btn-pequeno reabrir btn-toggle-pagamento" data-linha="${p.linha}">✏️ Alterar pagamento</button>
+        <button type="button" class="btn-pequeno reabrir" data-linha="${p.linha}">↩️ Reabrir</button>
+        <div class="editor-pagamento" data-linha="${p.linha}" hidden>
+          <select class="select-pagamento-editar">
+            ${OPCOES_PAGAMENTO.map((op) => `<option value="${op}" ${op === p.formaPagamentoConfirmada ? 'selected' : ''}>${op}</option>`).join('')}
+          </select>
+          <button type="button" class="btn-pequeno confirmar btn-salvar-pagamento" data-linha="${p.linha}">💾 Salvar</button>
+        </div>
+      `;
     } else {
       acoes = `<button type="button" class="btn-pequeno reabrir" data-linha="${p.linha}">↩️ Reabrir</button>`;
     }
@@ -75,7 +96,7 @@ function renderizarPedidos() {
         <span class="pedido-data">${escaparHTML(p.data)}</span>
         <span class="pedido-numero">${escaparHTML(p.numero)} ${selo}</span>
       </div>
-      <div class="pedido-produto">${escaparHTML(p.produto)}${p.preco ? ' — R$ ' + escaparHTML(p.preco) : ''}</div>
+      <div class="pedido-produto">${escaparHTML(p.produto)}${p.preco ? ' — ' + escaparHTML(formatarPreco(p.preco)) : ''}</div>
       <div class="pedido-detalhe">Cliente: ${escaparHTML(p.cliente)}</div>
       <div class="pedido-detalhe">Pagamento informado pelo cliente: ${escaparHTML(p.pagamento)}</div>
       <div class="pedido-detalhe">Entrega: ${escaparHTML(p.entrega)}</div>
@@ -160,5 +181,11 @@ document.getElementById('listaPedidos').addEventListener('click', async (e) => {
   } else if (botao.classList.contains('comprovante')) {
     await fetch(`/api/pedidos/${linha}/comprovante`, { method: 'POST' });
     await carregarPedidos();
+  } else if (botao.classList.contains('btn-toggle-pagamento')) {
+    const editor = card.querySelector(`.editor-pagamento[data-linha="${linha}"]`);
+    editor.hidden = !editor.hidden;
+  } else if (botao.classList.contains('btn-salvar-pagamento')) {
+    const novaForma = botao.closest('.editor-pagamento').querySelector('.select-pagamento-editar').value;
+    await mudarStatusPedido(linha, 'Confirmado', novaForma, null);
   }
 });
