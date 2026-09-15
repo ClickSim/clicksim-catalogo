@@ -77,13 +77,13 @@ function renderizarPedidos() {
       `;
     } else if (p.status === 'Confirmado') {
       acoes = `
-        <button type="button" class="btn-pequeno reabrir btn-toggle-pagamento" data-linha="${p.linha}">✏️ Alterar pagamento</button>
+        <button type="button" class="btn-pequeno btn-toggle-pagamento" data-linha="${p.linha}">✏️ Alterar pagamento</button>
         <button type="button" class="btn-pequeno reabrir" data-linha="${p.linha}">↩️ Reabrir</button>
         <div class="editor-pagamento" data-linha="${p.linha}" hidden>
           <select class="select-pagamento-editar">
             ${OPCOES_PAGAMENTO.map((op) => `<option value="${op}" ${op === p.formaPagamentoConfirmada ? 'selected' : ''}>${op}</option>`).join('')}
           </select>
-          <button type="button" class="btn-pequeno confirmar btn-salvar-pagamento" data-linha="${p.linha}">💾 Salvar</button>
+          <button type="button" class="btn-pequeno btn-salvar-pagamento" data-linha="${p.linha}">💾 Salvar</button>
         </div>
       `;
     } else {
@@ -223,6 +223,17 @@ document.getElementById('listaPedidos').addEventListener('click', async (e) => {
   const linha = botao.dataset.linha;
   const card = botao.closest('.pedido-item');
 
+  if (botao.classList.contains('btn-toggle-pagamento')) {
+    const editor = card.querySelector(`.editor-pagamento[data-linha="${linha}"]`);
+    editor.hidden = !editor.hidden;
+    return;
+  }
+  if (botao.classList.contains('btn-salvar-pagamento')) {
+    const novaForma = botao.closest('.editor-pagamento').querySelector('.select-pagamento-editar').value;
+    await mudarStatusPedido(linha, 'Confirmado', novaForma, null);
+    return;
+  }
+
   if (botao.classList.contains('confirmar')) {
     if (botao.dataset.forma) {
       // "Pagamento recebido" num pedido A Prazo → vira Confirmado direto
@@ -249,11 +260,5 @@ document.getElementById('listaPedidos').addEventListener('click', async (e) => {
   } else if (botao.classList.contains('comprovante')) {
     await fetch(`/api/pedidos/${linha}/comprovante`, { method: 'POST' });
     await carregarPedidos();
-  } else if (botao.classList.contains('btn-toggle-pagamento')) {
-    const editor = card.querySelector(`.editor-pagamento[data-linha="${linha}"]`);
-    editor.hidden = !editor.hidden;
-  } else if (botao.classList.contains('btn-salvar-pagamento')) {
-    const novaForma = botao.closest('.editor-pagamento').querySelector('.select-pagamento-editar').value;
-    await mudarStatusPedido(linha, 'Confirmado', novaForma, null);
   }
 });

@@ -382,6 +382,8 @@ textarea, input[type="text"], input[type="number"], input:not([type]), select {
 .btn-pequeno.cancelar { background: var(--vermelho); color: #fff; }
 .btn-pequeno.reabrir { background: var(--destaque-off); color: var(--cor-destaque-escuro); }
 .btn-pequeno.comprovante { background: var(--cor-secundaria); color: #fff; }
+.btn-pequeno.btn-toggle-pagamento { background: var(--destaque-off); color: var(--cor-destaque-escuro); }
+.btn-pequeno.btn-salvar-pagamento { background: var(--verde); color: #fff; }
 .pedido-item .selo-status {
   font-size: 11px;
   font-weight: 700;
