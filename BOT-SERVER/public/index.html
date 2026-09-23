@@ -2,6 +2,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Painel Click Sim</title>
 <link rel="icon" href="logo.ico" />
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#a8763e" />
+<link rel="apple-touch-icon" href="img/icon-180.png" />
 <link rel="stylesheet" href="style.css" />
 
 <div class="app">
@@ -399,3 +402,11 @@
 <script src="app-pedidos.js"></script>
 <script src="app-notas.js"></script>
 <script src="app-financeiro.js"></script>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js');
+    });
+  }
+</script>
