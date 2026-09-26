@@ -18,27 +18,34 @@
 </head>
 <body>
 
+<button id="btnMenuLateral" class="btn-menu-lateral" aria-label="Abrir menu de entrega e pagamento">☰</button>
+<div id="fundoLateral" class="fundo-lateral"></div>
+
 <header class="topbar">
   <img src="../EDICAO/imagens/logo-clicksim.png" alt="Click Sim Perfumes" class="logo">
   <h1>Click Sim <span>Perfumaria</span></h1>
   <p class="subtitle">Catálogo de Perfumes</p>
 </header>
 
-<div class="entrega-info">
-  <p>📦 Entregamos em todo o Brasil</p>
-  <span class="entrega-obs">Prazo de entrega entre 1 e 10 dias, podendo variar conforme a região</span>
-  <a id="linkWhatsappTopo" class="entrega-whatsapp" href="#" target="_blank" rel="noopener">Para mais detalhes, chame no WhatsApp</a>
-</div>
+<aside id="painelLateral" class="painel-lateral">
+  <button id="fecharLateral" class="fechar-lateral" aria-label="Fechar">&times;</button>
 
-<div class="formas-pagamento">
-  <span class="formas-pagamento-titulo">Formas de pagamento aceitas:</span>
-  <span class="formas-pagamento-lista">
-    <span class="forma-pagamento">Pix</span>
-    <span class="forma-pagamento">Cartão Débito</span>
-    <span class="forma-pagamento">Cartão Crédito</span>
-    <span class="forma-pagamento">Dinheiro</span>
-  </span>
-</div>
+  <div class="entrega-info">
+    <p>📦 Entregamos em todo o Brasil</p>
+    <span class="entrega-obs">Prazo de entrega entre 1 e 10 dias, podendo variar conforme a região</span>
+    <a id="linkWhatsappTopo" class="entrega-whatsapp" href="#" target="_blank" rel="noopener">Para mais detalhes, chame no WhatsApp</a>
+  </div>
+
+  <div class="formas-pagamento">
+    <span class="formas-pagamento-titulo">Formas de pagamento aceitas:</span>
+    <span class="formas-pagamento-lista">
+      <span class="forma-pagamento">Pix</span>
+      <span class="forma-pagamento">Cartão Débito</span>
+      <span class="forma-pagamento">Cartão Crédito</span>
+      <span class="forma-pagamento">Dinheiro</span>
+    </span>
+  </div>
+</aside>
 
 <section class="filtros">
   <input type="text" id="busca" placeholder="Buscar por nome ou marca...">

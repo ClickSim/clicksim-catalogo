@@ -430,6 +430,95 @@ body {
   color-scheme: light;
 }
 
+/* Menu lateral (entrega + pagamento) — só vira gaveta deslizante no mobile.
+   No desktop o botão de hambúrguer fica escondido e o painel aparece normal,
+   no fluxo da página, igual sempre foi. */
+.btn-menu-lateral {
+  display: none;
+}
+
+.fundo-lateral {
+  display: none;
+}
+
+.fechar-lateral {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .btn-menu-lateral {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 201;
+    width: 40px;
+    height: 40px;
+    border: none;
+    border-radius: 10px;
+    background: var(--cor-card);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    font-size: 1.3rem;
+    color: var(--cor-texto);
+    cursor: pointer;
+  }
+
+  .fundo-lateral.aberto {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 199;
+    background: rgba(0, 0, 0, 0.45);
+  }
+
+  .painel-lateral {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 200;
+    width: 82%;
+    max-width: 300px;
+    background: var(--cor-fundo);
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.2);
+    padding: 56px 18px 24px;
+    overflow-y: auto;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+  }
+
+  .painel-lateral.aberto {
+    transform: translateX(0);
+  }
+
+  .fechar-lateral {
+    display: block;
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: none;
+    border: none;
+    font-size: 1.6rem;
+    line-height: 1;
+    color: var(--cor-texto);
+    cursor: pointer;
+    padding: 6px;
+  }
+
+  .painel-lateral .entrega-info,
+  .painel-lateral .formas-pagamento {
+    text-align: left;
+    margin: 0 0 20px;
+    max-width: none;
+  }
+
+  .painel-lateral .formas-pagamento-lista {
+    justify-content: flex-start;
+  }
+}
+
 /* Versão mobile: sem isso, o grid (auto-fill, mínimo 220px) só cabia 1 produto
    por linha na maioria dos celulares, e a busca (min-width: 260px) ficava
    apertada — força 2 colunas lado a lado e reduz textos/espaçamentos pra caber. */

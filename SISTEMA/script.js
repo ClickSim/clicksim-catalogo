@@ -256,3 +256,24 @@ function aplicarFiltros() {
 busca.addEventListener("input", aplicarFiltros);
 filtroCategoria.addEventListener("change", aplicarFiltros);
 filtroGenero.addEventListener("change", aplicarFiltros);
+
+// menu lateral (entrega + pagamento) — só existe visualmente no mobile (ver style.css),
+// mas os listeners ficam sempre ativos, sem custo no desktop já que os botões ficam ocultos
+const btnMenuLateral = document.getElementById("btnMenuLateral");
+const painelLateral = document.getElementById("painelLateral");
+const fundoLateral = document.getElementById("fundoLateral");
+const fecharLateralBtn = document.getElementById("fecharLateral");
+
+function abrirMenuLateral() {
+  painelLateral.classList.add("aberto");
+  fundoLateral.classList.add("aberto");
+}
+
+function fecharMenuLateral() {
+  painelLateral.classList.remove("aberto");
+  fundoLateral.classList.remove("aberto");
+}
+
+btnMenuLateral.addEventListener("click", abrirMenuLateral);
+fundoLateral.addEventListener("click", fecharMenuLateral);
+fecharLateralBtn.addEventListener("click", fecharMenuLateral);
