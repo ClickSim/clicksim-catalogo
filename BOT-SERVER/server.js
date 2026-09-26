@@ -743,9 +743,43 @@ app.post('/api/upload-imagem', (req, res) => {
   res.json({ arquivo: nomeArquivo, url: `https://167-99-150-99.sslip.io/imagens-produtos/${nomeArquivo}` });
 });
 
+const PASTA_BACKUPS_PERFUMES = path.join(__dirname, 'data', 'backups-perfumes');
+
+// Esse endpoint substitui a lista inteira (não adiciona um item) — se o painel que chama
+// aqui carregar uma lista desatualizada/incompleta por algum bug, ele sobrescreve e apaga
+// produtos reais sem avisar (já aconteceu: painel quebrado sobrescreveu produtos cadastrados
+// em 09-10/09/2026, sem backup pra recuperar). Agora sempre guarda uma cópia de segurança
+// antes de sobrescrever, e loga um aviso se a lista encolher muito de uma vez.
 app.post('/api/perfumes', (req, res) => {
   const lista = req.body;
   if (!Array.isArray(lista)) return res.status(400).json({ erro: 'esperado uma lista de produtos' });
+
+  const listaAnterior = lerJSON(ARQ_PERFUMES, []);
+  if (listaAnterior.length > 0) {
+    try {
+      fs.mkdirSync(PASTA_BACKUPS_PERFUMES, { recursive: true });
+      const arquivoBackup = path.join(PASTA_BACKUPS_PERFUMES, `perfumes-${Date.now()}.json`);
+      fs.writeFileSync(arquivoBackup, JSON.stringify(listaAnterior, null, 2), 'utf-8');
+
+      const backups = fs.readdirSync(PASTA_BACKUPS_PERFUMES).sort();
+      const LIMITE_BACKUPS = 60; // ~1 por salvamento recente, sem crescer sem limite
+      if (backups.length > LIMITE_BACKUPS) {
+        for (const antigo of backups.slice(0, backups.length - LIMITE_BACKUPS)) {
+          fs.unlinkSync(path.join(PASTA_BACKUPS_PERFUMES, antigo));
+        }
+      }
+    } catch (erro) {
+      console.error('Não foi possível criar backup de perfumes.json:', erro.message);
+    }
+
+    if (lista.length < listaAnterior.length * 0.7) {
+      console.error(
+        `⚠️ AVISO: lista de perfumes encolheu de ${listaAnterior.length} pra ${lista.length} de uma vez ` +
+        `(backup salvo em ${PASTA_BACKUPS_PERFUMES}). Se não foi uma exclusão em massa intencional, restaurar do backup.`
+      );
+    }
+  }
+
   salvarJSON(ARQ_PERFUMES, lista);
   res.json({ ok: true });
 });
