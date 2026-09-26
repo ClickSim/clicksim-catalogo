@@ -14,18 +14,25 @@
 <meta name="twitter:title" content="Click Sim Perfumaria">
 <meta name="twitter:description" content="Catálogo de perfumes Click Sim Perfumaria — perfumes originais, testers com desconto e sabonetes.">
 <meta name="twitter:image" content="https://clicksim.github.io/clicksim-catalogo/EDICAO/imagens/logo-clicksim.png">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
-<button id="btnMenuLateral" class="btn-menu-lateral" aria-label="Abrir menu de entrega e pagamento">☰</button>
 <div id="fundoLateral" class="fundo-lateral"></div>
 
-<header class="topbar">
-  <img src="../EDICAO/imagens/logo-clicksim.png" alt="Click Sim Perfumes" class="logo">
-  <h1>Click Sim <span>Perfumaria</span></h1>
-  <p class="subtitle">Catálogo de Perfumes</p>
-</header>
+<div id="cabecalhoFixo" class="cabecalho-fixo">
+  <button id="btnMenuLateral" class="btn-menu-lateral" aria-label="Abrir menu de entrega e pagamento">☰</button>
+
+  <header class="topbar">
+    <img src="../EDICAO/imagens/logo-clicksim.png" alt="Click Sim Perfumes" class="logo">
+    <h1>Click Sim <span>Perfumaria</span></h1>
+    <p class="subtitle">Catálogo de Perfumes</p>
+  </header>
+
+  <div class="busca-wrap">
+    <input type="text" id="busca" placeholder="Buscar por nome ou marca...">
+  </div>
+</div>
 
 <aside id="painelLateral" class="painel-lateral">
   <button id="fecharLateral" class="fechar-lateral" aria-label="Fechar">&times;</button>
@@ -48,7 +55,6 @@
 </aside>
 
 <section class="filtros">
-  <input type="text" id="busca" placeholder="Buscar por nome ou marca...">
   <select id="filtroCategoria">
     <option value="todos">Todas as categorias</option>
     <option value="Perfume">Perfumes</option>
@@ -77,6 +83,14 @@
 <footer class="rodape">
   <p>Click Sim &copy; <span id="ano"></span> · <a href="../EDICAO/painel.html" class="link-painel">Painel</a></p>
 </footer>
+
+<div id="lightboxFundo" class="lightbox-fundo">
+  <button id="lightboxFechar" class="lightbox-fechar" aria-label="Fechar">&times;</button>
+  <button id="lightboxAnterior" class="lightbox-seta lightbox-anterior" aria-label="Foto anterior">‹</button>
+  <img id="lightboxImg" class="lightbox-img" alt="">
+  <button id="lightboxProxima" class="lightbox-seta lightbox-proxima" aria-label="Próxima foto">›</button>
+  <div id="lightboxPontos" class="lightbox-pontos"></div>
+</div>
 
 <div id="modalFundo" class="modal-fundo">
   <div class="modal">
@@ -117,6 +131,6 @@
 
 <script src="../EDICAO/config.js"></script>
 <script src="../EDICAO/perfumes.js"></script>
-<script src="script.js?v=2"></script>
+<script src="script.js?v=3"></script>
 </body>
 </html>

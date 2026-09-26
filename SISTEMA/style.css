@@ -120,6 +120,21 @@ body {
   color: var(--cor-texto);
 }
 
+.busca-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 0 16px 12px;
+}
+
+.busca-wrap input {
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid var(--cor-borda);
+  font-size: 0.95rem;
+  background: var(--cor-card);
+  min-width: 260px;
+}
+
 .filtros {
   display: flex;
   gap: 12px;
@@ -128,17 +143,12 @@ body {
   padding: 0 16px 24px;
 }
 
-.filtros input,
 .filtros select {
   padding: 10px 14px;
   border-radius: 8px;
   border: 1px solid var(--cor-borda);
   font-size: 0.95rem;
   background: var(--cor-card);
-}
-
-.filtros input {
-  min-width: 260px;
 }
 
 .info-categoria {
@@ -446,6 +456,24 @@ body {
 }
 
 @media (max-width: 640px) {
+  /* cabeçalho (logo/título + busca) fica fixo no topo, só o catálogo rola por baixo */
+  .cabecalho-fixo {
+    position: sticky;
+    top: 0;
+    z-index: 150;
+    background: var(--cor-fundo);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+  }
+
+  .busca-wrap {
+    padding: 0 12px 10px;
+  }
+
+  .busca-wrap input {
+    width: 100%;
+    min-width: 0;
+  }
+
   .btn-menu-lateral {
     display: flex;
     align-items: center;
@@ -588,5 +616,96 @@ body {
   .selo-mais-vendido {
     font-size: 0.6rem;
     padding: 3px 6px;
+  }
+}
+
+/* Lightbox — clicar na foto do produto abre ela grande, com setas/arraste pra
+   trocar entre as fotos daquele mesmo produto */
+.lightbox-fundo {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0, 0, 0, 0.92);
+  align-items: center;
+  justify-content: center;
+  touch-action: none;
+}
+
+.lightbox-fundo.aberto {
+  display: flex;
+}
+
+.lightbox-img {
+  max-width: 92vw;
+  max-height: 82vh;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.lightbox-fechar {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-seta {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.lightbox-anterior { left: 12px; }
+.lightbox-proxima { right: 12px; }
+
+.lightbox-pontos {
+  position: absolute;
+  bottom: 18px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.lightbox-pontos .ponto {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.lightbox-pontos .ponto.ativo {
+  background: #fff;
+}
+
+.card-imagem {
+  cursor: zoom-in;
+}
+
+@media (max-width: 640px) {
+  .lightbox-seta {
+    width: 38px;
+    height: 38px;
+    font-size: 1.5rem;
   }
 }

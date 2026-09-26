@@ -131,23 +131,29 @@ function renderizar(lista) {
 
   document.querySelectorAll(".card-imagem").forEach((el) => {
     const p = lista[Number(el.dataset.indice)];
-    if (p.imagens.length <= 1) return;
-    const imgEl = el.querySelector("img");
-    const pontos = el.querySelectorAll(".ponto");
     let atual = 0;
-    function mostrar(i) {
-      atual = (i + p.imagens.length) % p.imagens.length;
-      if (imgEl) imgEl.src = resolverImagem(p.imagens[atual]);
-      pontos.forEach((pt, i2) => pt.classList.toggle("ativo", i2 === atual));
+
+    if (p.imagens.length > 1) {
+      const imgEl = el.querySelector("img");
+      const pontos = el.querySelectorAll(".ponto");
+      function mostrar(i) {
+        atual = (i + p.imagens.length) % p.imagens.length;
+        if (imgEl) imgEl.src = resolverImagem(p.imagens[atual]);
+        pontos.forEach((pt, i2) => pt.classList.toggle("ativo", i2 === atual));
+      }
+      el.querySelector(".galeria-anterior").addEventListener("click", (e) => {
+        e.stopPropagation();
+        mostrar(atual - 1);
+      });
+      el.querySelector(".galeria-proxima").addEventListener("click", (e) => {
+        e.stopPropagation();
+        mostrar(atual + 1);
+      });
     }
-    el.querySelector(".galeria-anterior").addEventListener("click", (e) => {
-      e.stopPropagation();
-      mostrar(atual - 1);
-    });
-    el.querySelector(".galeria-proxima").addEventListener("click", (e) => {
-      e.stopPropagation();
-      mostrar(atual + 1);
-    });
+
+    if (p.imagens.length > 0) {
+      el.addEventListener("click", () => abrirLightbox(p.imagens, atual));
+    }
   });
 
   document.querySelectorAll(".btn-comprar").forEach((btn) => {
@@ -277,3 +283,57 @@ function fecharMenuLateral() {
 btnMenuLateral.addEventListener("click", abrirMenuLateral);
 fundoLateral.addEventListener("click", fecharMenuLateral);
 fecharLateralBtn.addEventListener("click", fecharMenuLateral);
+
+// lightbox — clicar na foto do card abre ela grande, com seta/arraste pra trocar
+// entre as fotos do mesmo produto (independente da galeria pequena do card)
+const lightboxFundo = document.getElementById("lightboxFundo");
+const lightboxImg = document.getElementById("lightboxImg");
+const lightboxPontos = document.getElementById("lightboxPontos");
+const lightboxAnterior = document.getElementById("lightboxAnterior");
+const lightboxProxima = document.getElementById("lightboxProxima");
+const lightboxFecharBtn = document.getElementById("lightboxFechar");
+
+let lightboxImagens = [];
+let lightboxIndice = 0;
+
+function mostrarFotoLightbox(i) {
+  lightboxIndice = (i + lightboxImagens.length) % lightboxImagens.length;
+  lightboxImg.src = resolverImagem(lightboxImagens[lightboxIndice]);
+  lightboxPontos.querySelectorAll(".ponto").forEach((pt, i2) => pt.classList.toggle("ativo", i2 === lightboxIndice));
+}
+
+function abrirLightbox(imagens, indiceInicial) {
+  if (!imagens || imagens.length === 0) return;
+  lightboxImagens = imagens;
+  lightboxPontos.innerHTML =
+    imagens.length > 1 ? imagens.map(() => '<span class="ponto"></span>').join("") : "";
+  const mostraSetas = imagens.length > 1;
+  lightboxAnterior.hidden = !mostraSetas;
+  lightboxProxima.hidden = !mostraSetas;
+  mostrarFotoLightbox(indiceInicial || 0);
+  lightboxFundo.classList.add("aberto");
+}
+
+function fecharLightbox() {
+  lightboxFundo.classList.remove("aberto");
+  lightboxImg.src = "";
+}
+
+lightboxFecharBtn.addEventListener("click", fecharLightbox);
+lightboxFundo.addEventListener("click", (e) => {
+  if (e.target === lightboxFundo) fecharLightbox();
+});
+lightboxAnterior.addEventListener("click", () => mostrarFotoLightbox(lightboxIndice - 1));
+lightboxProxima.addEventListener("click", () => mostrarFotoLightbox(lightboxIndice + 1));
+
+// arrastar (touch e mouse) pra trocar de foto, tipo Instagram/WhatsApp
+let toqueInicioX = null;
+lightboxFundo.addEventListener("touchstart", (e) => { toqueInicioX = e.touches[0].clientX; }, { passive: true });
+lightboxFundo.addEventListener("touchend", (e) => {
+  if (toqueInicioX === null) return;
+  const deltaX = e.changedTouches[0].clientX - toqueInicioX;
+  if (Math.abs(deltaX) > 40 && lightboxImagens.length > 1) {
+    mostrarFotoLightbox(deltaX < 0 ? lightboxIndice + 1 : lightboxIndice - 1);
+  }
+  toqueInicioX = null;
+});
