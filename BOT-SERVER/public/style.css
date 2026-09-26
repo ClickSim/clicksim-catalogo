@@ -29,7 +29,11 @@ body {
   min-height: 100vh;
 }
 @media (max-width: 780px) {
-  .app { flex-direction: column; min-height: 0; }
+  /* align-items: flex-start (herdado da regra acima) faz sentido na linha do desktop,
+     mas em coluna ele vira o eixo cruzado (largura) — sem stretch, o <main> só "abraça"
+     o próprio conteúdo (form/lista) em vez de ocupar 100% da tela, empurrando tudo (e os
+     botões junto) pra fora da largura do celular. */
+  .app { flex-direction: column; min-height: 0; align-items: stretch; }
 }
 
 .barra-lateral {
@@ -582,3 +586,24 @@ textarea, input[type="text"], input[type="number"], input:not([type]), select {
 .cartao-financeiro.receita { background: #dcf5ea; color: #0d6b48; }
 .cartao-financeiro.custo { background: #fbdcdc; color: #8f1420; }
 .cartao-financeiro.lucro { background: var(--destaque-off); color: var(--cor-destaque-escuro); }
+
+@media (max-width: 780px) {
+  /* numa linha só, preço + botões (Editar/Excluir) não cabem ao lado do nome do
+     produto — o nome ficava espremido a 0px de largura. Reorganiza em 2 linhas:
+     foto+nome em cima, preço+botões embaixo (foto/arraste ocupam as 2 linhas). */
+  .item-perfume {
+    display: grid;
+    grid-template-columns: auto 48px 1fr auto;
+    grid-template-areas:
+      "arraste foto info   preco"
+      "arraste foto botoes botoes";
+    align-items: center;
+    row-gap: 6px;
+    column-gap: 10px;
+  }
+  .item-arraste { grid-area: arraste; }
+  .item-foto { grid-area: foto; }
+  .item-info { grid-area: info; }
+  .item-preco { grid-area: preco; }
+  .item-botoes { grid-area: botoes; justify-content: flex-end; }
+}
