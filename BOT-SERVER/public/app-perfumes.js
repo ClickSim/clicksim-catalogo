@@ -4,6 +4,11 @@ const PASTA_IMAGENS = "https://clicksim.github.io/clicksim-catalogo/EDICAO/image
 inicializarPainelPerfumes();
 
 async function inicializarPainelPerfumes() {
+  // precisa vir antes do carregarPerfumes() abaixo — normalizarImagem() usa MAX_FOTOS
+  // durante esse carregamento, e como const não é hoisted, declarar depois causava
+  // "Cannot access 'MAX_FOTOS' before initialization" e derrubava o carregamento real,
+  // caindo no catálogo de reserva desatualizado.
+  const MAX_FOTOS = 5;
   let perfumes = await carregarPerfumes();
   let idEmEdicao = null;
 
@@ -22,7 +27,6 @@ async function inicializarPainelPerfumes() {
   const fPreco = document.getElementById("fPreco");
   const fFotos = document.getElementById("fFotos");
   const previewFotosEl = document.getElementById("previewFotos");
-  const MAX_FOTOS = 5;
   let fotosAtuais = [];
   const fDescricao = document.getElementById("fDescricao");
   const fMaisVendido = document.getElementById("fMaisVendido");
